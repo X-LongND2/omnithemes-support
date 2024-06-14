@@ -1,0 +1,128 @@
+{% comment %}
+    Renders upsell product list in cart page
+
+    Usage:
+    {% render 'cart-upsell' %}
+{% endcomment %}
+{%- liquid  
+  if settings.number_of_product_shown > section.settings.number_of_columns_on_desktop
+    assign enable_carousel = true
+  else 
+    assign enable_carousel = false
+  endif
+
+  assign disable_quickview = true
+  if section.settings.show_quickview
+    assign disable_quickview = false
+  endif 
+-%}
+<div class="pt-[{{ section.settings.padding_top_mobile }}px] md:pt-[{{ section.settings.padding_top }}px] pb-[{{ section.settings.padding_bottom_mobile }}px] md:pb-[{{ section.settings.padding_bottom }}px]{% if template == 'cart' %} border-t{% endif %}"
+  x-data="{ show: false, productCount: 0, enable_carousel: {{ enable_carousel }} }"
+  x-show="show"
+  x-cloak
+  x-transition>
+  {%- if settings.cart_upsell_section_label != blank -%}
+    <div class="mb-7 lg:mb-14 page-width mx-auto">
+      <h2 class="text-center heading--{{ section.id }}">{{ settings.cart_upsell_section_label }}</h2>
+    </div>
+  {%- endif -%}
+  <div class="page-width" :class="enable_carousel && 'carousel-mobile full-width-mobile carousel-tablet'">
+    <div id="x-upsell-{{ section.id }}"
+      class="relative" 
+      :class="enable_carousel && 'x-splide splide md:cursor-grab'"
+      x-intersect.once.margin.200px='enable_carousel && $store.xSplide.load($el, {
+        "speed": 1000,
+        "pagination": false, 
+        "mediaQuery": "min",
+        "progressBar": 4,
+        "breakpoints": {
+          300: {
+            "padding": {
+              "right": "33%",
+              "left": 20
+            },
+            "focus": "right",
+            "gap": "1.25rem",
+            "perPage": 1 
+          },
+          768: {  
+            "padding": {
+              "right": 20,
+              "left": 20
+            },
+            "perPage": 4,
+            "perMove": 4
+          },
+          1024: {
+            "padding": 0,
+            "gap": "1.75rem"
+          }
+        }, 
+        "classes": {
+          "arrows": "splide__arrows block", 
+        }
+      })'
+    >
+      <div class="splide__track pt-0.5">
+        <div class="splide__list w-full flex" :class="!enable_carousel && 'grid grid-cols-1 md:grid md:grid-cols-4 lg:grid-cols-{{ section.settings.number_of_columns_on_desktop }} md:gap-4'">
+          {%- liquid 
+            assign productCount = 0
+            assign productIds = cart.items | map: 'product_id' | uniq | join: ', ' | append: ","
+            assign maxItems = settings.number_of_product_shown
+            for item in cart.items
+              if item.product.metafields.cart.upsell.value.count > 0
+                for prod in item.product.metafields.cart.upsell.value
+                  if prod.available
+                    assign productId = prod.id | append: ","
+                    unless productIds contains productId
+                      assign productIds = productIds | append: productId
+                      assign productCount = productCount | plus: 1
+                      render 'card-product', card_product: prod, extend_height: true, class_slide: 'splide__slide x-splide-slide', index: forloop.index, columns_desktop: section.settings.number_of_columns_on_desktop, block_id: forloop.index, disable_quickview: disable_quickview
+                    endunless
+                  endif
+                  if productCount >= maxItems
+                    break
+                  endif
+                endfor
+              endif
+            endfor
+            if productCount == 0
+              for prod in settings.cart_upsell_product_list
+                if prod.available
+                  assign productId = prod.id | append: ","
+                  unless productIds contains productId
+                    assign productIds = productIds | append : productId
+                    assign productCount = productCount | plus : 1
+                    render 'card-product', card_product: prod, extend_height: true, class_slide: 'splide__slide x-splide-slide', index: forloop.index, columns_desktop: section.settings.number_of_columns_on_desktop, block_id: forloop.index, disable_quickview: disable_quickview
+                  endunless
+                endif
+                if productCount >= maxItems
+                  break
+                endif
+              endfor
+            endif
+          -%} 
+        </div>
+
+        <div x-show="enable_carousel" class="hidden lg:flex items-center mt-2">
+          <div class="splide-progress inline-block grow">
+            <div class="splide-progress-bar"></div>
+          </div>
+          <div class="splide__arrows lg:inline-flex ml-5 hidden">
+            <button class="splide__arrow splide__arrow--prev hidden lg:block none_border z-10 w-6 h-6 after:text-[20px] -rotate-180 duration-200 opacity-60 hover:opacity-100 disabled:opacity-40 disabled:cursor-not-allowed" aria-label="previous slide">
+              {% render 'icon-alls', icon: 'icon-arrow' %}
+            </button>
+            <button class="splide__arrow splide__arrow--next hidden lg:block none_border z-10 w-6 h-6 after:text-[20px] ml-2 duration-200 opacity-60 hover:opacity-100 disabled:opacity-40 disabled:cursor-not-allowed" aria-label="previous slide">
+              {% render 'icon-alls', icon: 'icon-arrow' %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div x-init="() => { 
+    productCount = {{ productCount }}; 
+    if (productCount > 0) show = true;  
+    if (productCount <= {{ section.settings.number_of_columns_on_desktop }}) enable_carousel = false;
+  }"></div>
+</div>

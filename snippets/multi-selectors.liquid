@@ -1,0 +1,95 @@
+{% comment %}
+    Renders a block logo
+
+    Accepts:
+    - enable_footer: {Boolean} Show on the footer
+    - currency_selector: {Boolean} Show currency selector
+    - locale_selector: {Boolean} Show language selector
+    Usage:
+    {% render 'multi-selectors' %}
+{% endcomment %}
+{% liquid 
+  if enable_footer
+    assign direction = 'multi-selectors flex flex-col lg:flex-row lg:items-center lg:justify-center md:flex-row'
+  else
+    assign direction = 'multi-selectors flex flex-col lg:flex-row lg:items-center lg:justify-center'
+  endif
+%}
+{%- form 'localization', class: direction -%}
+  {%- if locale_selector -%}
+    <div 
+      class="text-normal relative inline-flex lg:inline-block{% if enable_footer %} justify-center{% endif %}"
+      x-data="{ open: false }" 
+      @keyup.escape="open = false">
+      <button 
+        @click.prevent="open = ! open;{% if section.setting.header_show_language_selector %} $store.xHeaderMenu.hideMenu();{% endif %}"
+        class="relative pt-2.5 pb-2.5{% unless enable_footer %} lg:pl-5{% endunless %} pr-5 cursor-pointer uppercase hover-text-link duration-200 transition"
+        aria-expanded="false" aria-controls="LanguageList" aria-describedby="LanguageHeading">
+        <span>
+          {{ form.current_locale.endonym_name }}
+        </span>
+        <span class="absolute w-2.5	h-2.5 top-1/2 -translate-y-1/2 flex right-0" :class="open && ' -rotate-180'">{% render 'icon-alls', icon: 'icon-caret' %}</span>
+      </button>
+      <div x-show="open" @click.away="open = false" x-cloak>
+        <ul 
+          role="list" 
+          x-data="xLocalizationForm" 
+          class="pt-3 pb-3 pl-5 pr-5 absolute left-0 bottom-full z-50 shadow-md max-h-64 overflow-y-auto background-header{% if enable_footer %} background-footer bottom-9{% else %} bottom-0{% unless mobile %} lg:bottom-auto{% endunless %}{% endif %}">
+          {% for locale in form.available_locales %}
+            <li class="cursor-pointer py-1 duration-200 transition{% if enable_footer %} sticky-footer{% else %} text-[rgb(var(--colors-text-header))]{% endif %}">
+              <a 
+                class="nav-link hover-text-link relative{% if locale.iso_code == form.current_locale.iso_code %} border-b effect-inline{% endif %}"
+                href="#"
+                data-no-instant
+                @click="submit('{{ locale.iso_code }}', 'locale_selector')">
+                <span class="disclosure-list__label">
+                  {{ locale.endonym_name }}
+                </span>
+              </a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+      <input type="hidden" name="locale_code" id="locale_selector" value="{{ form.current_locale.iso_code }}" data-disclosure-input/>
+    </div>
+  {%- endif -%}
+  {%- if currency_selector -%}
+    <div 
+      class="text-normal relative inline-flex lg:inline-block{% if logo_above and show_social == false %} pr-8{% endif %}{% if enable_footer %} justify-center{% endif %}"
+      x-data="{ open: false }" 
+      @keyup.escape="open = false"
+    >
+      <button 
+        @click.prevent="open = ! open;{% if section.setting.header_show_currency_selector %} $store.xHeaderMenu.hideMenu();{% endif %}"
+        class="relative pt-2.5 pb-2.5 pr-5 lg:pl-5 cursor-pointer uppercase{% if enable_footer %} md:pl-6{% endif %} hover-text-link duration-200 transition"
+        aria-expanded="false" aria-controls="CurrencyList" aria-describedby="CurrencyHeading">
+        <span>
+          {{ localization.country.name }} ({{ localization.country.currency.iso_code }} {{ localization.country.currency.symbol }})
+        </span>
+        <span class="absolute w-2.5	h-2.5 top-1/2 -translate-y-1/2 flex right-0" :class="open && '-rotate-180'">{% render 'icon-alls', icon: 'icon-caret' %}</span>
+      </button>
+      <div x-show="open" @click.away="open = false" x-cloak>
+        <ul 
+          role="list"
+          x-data="xLocalizationForm" 
+          class="pt-3 pb-3 pl-5 pr-5 absolute left-0 bottom-full z-50 scrollbar-body shadow-md max-h-64 overflow-y-auto{% if enable_footer != true and logo_above == false %} right-0{% endif %} background-header{% if enable_footer %} background-footer bottom-9{% else %} bottom-0{% unless mobile %} lg:bottom-auto{% endunless %}{% endif %}">
+          {% for country in localization.available_countries %}
+            <li class="cursor-pointer py-1 duration-200 transition{% if enable_footer %} sticky-footer{% else %} text-[rgb(var(--colors-text-header))]{% endif %}">
+              <a 
+                class="nav-link hover-text-link relative{% if country.iso_code == localization.country.iso_code %} border-b effect-inline{% endif %}"
+                href="#"
+                data-no-instant
+                @click="submit('{{ country.iso_code }}', 'currency_selector')">
+                <span>
+                  {{ country.name }} ({{ country.currency.iso_code }} {{ country.currency.symbol }})
+                </span>
+              </a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+      <input id="currency_selector" type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
+    </div>
+  {%- endif -%}
+{%- endform -%}
+<script src="{{ 'locales-form.js' | asset_url }}" defer></script>

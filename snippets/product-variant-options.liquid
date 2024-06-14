@@ -1,0 +1,143 @@
+{% comment %}
+  Renders product variant options
+
+  Accepts:
+  - product: {Object} product object.
+  - option: {Object} current product_option object.
+  - option_index: {Number} index of option.
+  - product_form_id: {String} product add to cart form id.
+  - input_type: {String} 'select' or 'radio'.
+  - enable_color_swatches: {Boolean} is color swatches enabled? - Default: false
+
+  Usage:
+  {% render 'product-variant-options',
+    product: product,
+    option: option,
+    input_type: 'radio'
+  %}
+{% endcomment %}
+{%- liquid
+  assign variants_available_arr = product.variants | map: 'available'
+  assign variants_option1_arr = product.variants | map: 'option1'
+  assign variants_option2_arr = product.variants | map: 'option2'
+  assign variants_option3_arr = product.variants | map: 'option3'
+
+  assign color_option_values = settings.color_option_values | newline_to_br | strip_newlines | split: '<br />'
+-%}
+{%- for value in option.values -%}
+  {%- liquid
+    assign option_disabled = true
+
+    for option1_name in variants_option1_arr
+      case option.position
+        when 1
+          if variants_option1_arr[forloop.index0] == value and variants_available_arr[forloop.index0]
+            assign option_disabled = false
+          endif
+        when 2
+          if option1_name == product.selected_or_first_available_variant.option1 and variants_option2_arr[forloop.index0] == value and variants_available_arr[forloop.index0]
+            assign option_disabled = false
+          endif
+        when 3
+          if option1_name == product.selected_or_first_available_variant.option1 and variants_option2_arr[forloop.index0] == product.selected_or_first_available_variant.option2 and variants_option3_arr[forloop.index0] == value and variants_available_arr[forloop.index0]
+            assign option_disabled = false
+          endif
+      endcase
+    endfor
+  -%}
+
+  {%- if input_type == 'radio' -%}
+    {%- liquid
+      assign color_custom = blank
+      assign swatch_image = false
+      assign color_value = ''
+      for color_option_value in color_option_values reversed
+        assign option_key = color_option_value | split: ':' | first
+        assign option_value = color_option_value | split: ':' | last | strip
+
+        if option_key == value and option_value contains '.'
+          assign color_custom = option_key
+          assign swatch_image = true
+          assign color_value = option_value
+          break
+        endif
+        assign multiColors = option_value | remove_first: '#' | split: '#'
+        if option_key == value
+          assign color_custom = option_key
+          assign color_value = option_value
+          break
+        endif
+      endfor  
+    -%}
+    {% if color_custom != blank %}
+      {%- style %}
+        {% if swatch_image %}
+          [data-swatch="{{ color_custom }}"]:before {
+            background-image: url({{ color_value | file_img_url: "100x100" }});
+          }
+        {% elsif multiColors.size == 3 %}
+          [data-swatch="{{ color_custom }}"]:before {
+            background: linear-gradient(45deg, {{ '#' | append: multiColors[0] }}, {{ '#' | append: multiColors[0] }} 33.3%, {{ '#' | append: multiColors[1] }} 33.3%, {{ '#' | append: multiColors[1] }} 66.6%, {{ '#' | append: multiColors[2] }} 66.6%, {{ '#' | append: multiColors[2] }});
+          }
+        {% elsif multiColors.size == 2 %}
+          [data-swatch="{{ color_custom }}"]:before {
+            background: linear-gradient(45deg, {{ '#' | append: multiColors[0] }}, {{ '#' | append: multiColors[0] }} 50%, {{ '#' | append: multiColors[1] }} 50%, {{ '#' | append: multiColors[1] }});
+          }
+        {% else %}
+          [data-swatch="{{ color_custom }}"]:before {
+            background: {{ color_value }};
+          }
+        {% endif %}
+      {%- endstyle %}
+    {% endif %}
+    <input 
+      id="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
+      type="radio"
+      name="{{ option.name }}"
+      value="{{ value | escape | replace: '&lt;', '\u003c' | replace: '&gt;', '\u003e' }}"
+      form="{{ product_form_id }}"
+      class="absolute opacity-0 h-1 w-1 input-radio{% if option_disabled %} disabled{% endif %}"
+      {% if option_index > 0 %}:class="{'disabled': !currentAvailableOptions[{{ option_index }}] || !currentAvailableOptions[{{ option_index }}].includes(`{{ value }}`)}"{% endif %}
+      x-model="options[{{ option_index }}]"
+      aria-label="{{ value | escape }}"
+      {% if option.selected_value == value %}checked{% endif %}
+    >
+    {%- liquid       
+      if settings.products_color_swatches_style == 'round'
+        assign rounded = 'rounded-full before:rounded-full'
+      endif      
+    -%}
+
+    {% if enable_color_swatches and settings.color_option_name contains option.name %}
+      <label 
+        class="mr-2.5 color-watches cursor-pointer mt-2 mb-2.5 inline-flex ml-[2px] h-7 w-7 border relative {{ rounded }}" 
+        for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}" 
+        {% if color_custom != blank %}
+          data-swatch="{{ color_custom }}"
+        {% else %}
+          style="background: {{ value | split: ' ' | last | handle }};"
+        {% endif %}
+        tabindex="0"
+        aria-label="{{ value | escape }}"
+      >
+        <span class="h-full w-full color-watches-disable"></span>
+      </label>
+    {% else %}
+      <label class="mr-1.5 flex items-center outline-none uppercase cursor-pointer mt-2 mb-2 pl-5 pr-5 pt-2 pb-2 border bg-[rgba(var(--background-color),1)]{% if rounded_corner_option %} rounded-md{% endif %}" for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}">
+        <span>{{ value | escape }}</span>
+      </label>
+    {% endif %}
+  {% else %}
+    <option
+      value="{{ value | escape | replace: '&lt;', '\u003c' | replace: '&gt;', '\u003e' }}"
+      class="text-left whitespace-normal cursor-pointer content-{{ section.id }} bg-[rgba(var(--background-color),1)]"{% if option.selected_value == value %} selected="selected"{% endif %}
+      {% if option_index > 0 %}x-text="!currentAvailableOptions[{{ option_index }}] || !currentAvailableOptions[{{ option_index }}].includes(`{{ value }}`) ? `{{ 'products.product.value_unavailable' | t: value: value }}` : `{{ value }}`"{% endif %}
+    >
+      {% if option_disabled and sticky_add_to_cart == false -%}
+        {{- 'products.product.value_unavailable' | t: value: value | escape -}}
+      {%- else -%}
+        {{- value | escape -}}
+      {%- endif %}
+    </option>
+  {%- endif -%}
+{%- endfor -%}

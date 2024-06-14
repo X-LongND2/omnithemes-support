@@ -1,0 +1,203 @@
+{% comment %}
+    Renders a Promotion block
+
+    Accepts:
+    - image_ratio: {String} Size of the product image card. Values are "square", "rectangle", "round", "natural". Default is "square" (optional) 
+    Usage:
+    {% render 'promotion-block' %}
+{% endcomment %}
+
+{% liquid 
+  assign title_size =  title_size | times: settings.heading_base_size | times: 0.000225
+  assign text_size =  text_size | times: settings.text_base_size | times: 0.0000875
+  assign corner_image = false
+  if settings.edges_type == 'rounded_corners'
+    assign corner_image = true
+  endif
+%}
+{%- style -%}
+  {% if image == blank %}
+    .promotion-block-{{ block.id }}{
+      {% if block.settings.background_color_light.alpha != 0.0 %}
+        background: {{ block.settings.background_color_light }};
+        border: 1px solid {{ block.settings.background_color_light }};
+      {% else %}
+        background: {{ settings.secondary_background }};
+        border: 1px solid {{ settings.secondary_background }};
+      {% endif %}
+    }
+    .dark .promotion-block-{{ block.id }}{
+      {% if block.settings.background_color_dark.alpha != 0.0 %}
+        background: {{ block.settings.background_color_dark }};
+        border: 1px solid {{ block.settings.background_color_dark }};
+      {% else %}
+        background: {{ settings.secondary_background_dark }};
+        border: 1px solid {{ settings.secondary_background_dark }};
+      {% endif %}
+    }
+  {% endif %}
+  .text-color--{{ block.id }} {
+    {% if block.settings.text_color_light.alpha != 0.0 %}
+      --colors-heading: {{ block.settings.text_color_light.red }}, {{ block.settings.text_color_light.green }}, {{ block.settings.text_color_light.blue }};
+      --colors-text: {{ block.settings.text_color_light.red }}, {{ block.settings.text_color_light.green }}, {{ block.settings.text_color_light.blue }};
+    {% endif %}
+  }
+  .dark .text-color--{{ block.id }} {
+    {% if block.settings.text_color_dark.alpha == 0.0 %}
+      --colors-text: var(--colors-text-secondary);
+      --colors-heading: var(--colors-heading-secondary);
+    {% else %}
+      --colors-text:{{ block.settings.text_color_dark.red }}, {{ block.settings.text_color_dark.green }}, {{ block.settings.text_color_dark.blue }};
+      --colors-heading: {{ block.settings.text_color_dark.red }}, {{ block.settings.text_color_dark.green }}, {{ block.settings.text_color_dark.blue }};
+    {% endif %}
+  }
+  .title-{{ block.id }} { 
+    font-size: {{ title_size | times: 0.7 }}rem; 
+  }
+  .text-{{ block.id }} { 
+    font-size: {{ text_size | times: 0.9 }}rem; 
+  }
+  {%- if show_button_primary -%}
+    .button--{{ block.id }}.button-solid,
+    .button--{{ block.id }}.button-solid:before { 
+      {%- unless color_button.alpha == 0.0 -%}
+        --colors-line-and-border: {{ color_button.red }}, {{ color_button.green }}, {{ color_button.blue }};
+        --colors-button: {{ color_button.red }}, {{ color_button.green }}, {{ color_button.blue }};
+      {%- else -%}
+        --colors-line-and-border: var(--colors-button);
+      {%- endunless -%}
+      {%- unless color_button_hover.alpha == 0.0 -%}
+        --colors-button-hover: rgb({{ color_button_hover.red }}, {{ color_button_hover.green }}, {{ color_button_hover.blue }});
+      {%- endunless -%}
+      {%- unless color_text_button.alpha == 0.0 -%}
+        --colors-button-text: {{ color_text_button.red }}, {{ color_text_button.green }}, {{ color_text_button.blue }};
+      {%- endunless -%}
+      {%- unless color_text_button_hover.alpha == 0.0 -%}
+        --colors-button-text-hover: {{ color_text_button_hover.red }}, {{ color_text_button_hover.green }}, {{ color_text_button_hover.blue }};
+      {%- endunless -%}
+    }
+  {%- endif -%}
+  {%- if color_button_secondary.alpha != 0.0 -%} 
+    .button--{{ block.id }}.button-outline {
+      --colors-secondary-button: {{ color_button_secondary.red }}, {{ color_button_secondary.green }}, {{ color_button_secondary.blue }}; 
+      --colors-line-secondary-button: {{ color_button_secondary.red }}, {{ color_button_secondary.green }}, {{ color_button_secondary.blue }}; 
+    }
+  {%- endif -%}
+  @media screen and (min-width: 1024px) {
+    .title-{{ block.id }} { 
+      font-size: {{ title_size }}rem; 
+    }
+    .text-{{ block.id }} { 
+      font-size: {{ text_size }}rem; 
+    }
+  }
+{%- endstyle -%}
+{%- liquid 
+  assign classLayout = "flex flex-col justify-end"
+  if columns_desktop <= 5
+    if content_position
+      assign classLayout = "flex items-" | append: content_position
+    else
+      assign classLayout = "flex items-center"
+    endif
+  endif
+-%}
+{% unless is_menu %}
+<div class="relative promotion-block promotion group{% unless image_ratio == "round" %} promotion-block-{{ block.id }}{% endunless %}{% unless image_ratio == "round" or image_ratio == "auto" %} flex items-{{ content_position | default: 'center' }} h-full min-h-[200px]{% endunless %} md:list-layout:min-h-[200px]{% if settings.edges_type == 'rounded_corners' %} rounded-[10px]{% endif %}">
+  {%- if image != blank -%}
+    <div class="md:list-layout:pb-[26%] w-full h-full overflow-hidden relative z-0 before:h-0 before:block{% if corner_image and image_ratio != "round" %} rounded-[10px]{% endif %}{% if image_ratio == "round" %} rounded-full{%- endif -%}{% unless image_ratio == "auto" %} pb-[{{ ratio }}%]{% endunless %}"{% if image_ratio == "auto" %} style="height:0; padding-bottom: {{ 100 | divided_by: image.aspect_ratio }}%;"{% endif %}>
+      <div class="block{% if image_ratio == "round" %} rounded-full{% endif %}{% if corner_image and image_ratio != "round" %} rounded-[10px]{% endif %}">
+        <div class="w-full h-full top-0 left-0 absolute duration-300 transition ease-out z-10">
+          <img
+            srcset="{{ image | image_url: width: 225 }} 225w,
+            {{ image | image_url: width: 375 }} 375w,
+            {{ image | image_url: width: 450 }} 450w,
+            {{ image | image_url: width: 750 }} 750w,
+            {{ image | image_url: width: 900 }} 900w,
+            {{ image | image_url: width: 1100 }} 1100w,
+            {{ image | image_url: width: 1500 }} 1500w,
+            {{ image | image_url: width: 1780 }} 1780w"
+            src="{{ image | image_url: width: 1780 }}"
+            sizes="(min-width: {{ settings.page_width }}px) {% if enable_desktop_slider %}{{ settings.page_width | plus: 100 | divided_by: columns_desktop }}px{% else %}calc((100vw - 10rem) / {{ columns_desktop }}){% endif %}, 
+            (min-width: 768px) {% if columns_desktop > 1 %}calc((100vw - 5rem) / 2){% else %}calc(100vw - 5rem){% endif %}, 
+            calc((100vw) / {{ columns_mobile }})"
+            loading="lazy"
+            alt="{{ image.alt | escape }}"
+            width="{{ image.width }}"
+            height="{{ image.width | divided_by: image.aspect_ratio }}"
+            style="object-position: {{ image.presentation.focal_point }};"
+            class="md:list-layout:hidden aspect-{{ image_ratio }} image-hover w-full h-full object-cover duration-300 transition ease-out{% if image_ratio == "round" %} rounded-full{% endif %}{% if corner_image and image_ratio != "round" %} rounded-[10px]{% endif %}"
+          >
+          {% if list_layout %}
+            <img
+              srcset="{{ image | image_url: width: 225 }} 225w,
+              {{ image | image_url: width: 375 }} 375w,
+              {{ image | image_url: width: 450 }} 450w,
+              {{ image | image_url: width: 750 }} 750w,
+              {{ image | image_url: width: 900 }} 900w,
+              {{ image | image_url: width: 1100 }} 1100w,
+              {{ image | image_url: width: 1500 }} 1500w,
+              {{ image | image_url: width: 1780 }} 1780w"
+              src="{{ image | image_url: width: 1780 }}"
+              sizes="(min-width: {{ settings.page_width }}px) {{ settings.page_width | plus: 100 }}px,100vw"
+              loading="lazy"
+              alt="{{ image.alt | escape }}"
+              width="{{ image.width }}"
+              height="{{ image.width | divided_by: image.aspect_ratio }}"
+              style="object-position: {{ image.presentation.focal_point }};"
+              class="aspect-{{ image_ratio }} hidden md:list-layout:block image-hover w-full h-full object-cover duration-300 transition ease-out{% if image_ratio == "round" %} rounded-full{% endif %}"
+            >
+          {% endif %}
+        </div>
+        <span class="absolute top-0 left-0 bottom-0 right-0 z-10 image-treatment-overlay opacity-{{ image_overlay_opacity }}"></span>
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+    <img
+      srcset="{{ image | image_url: width: 225 }} 225w,
+      {{ image | image_url: width: 375 }} 375w,
+      {{ image | image_url: width: 450 }} 450w,
+      {{ image | image_url: width: 750 }} 750w,
+      {{ image | image_url: width: 900 }} 900w,
+      {{ image | image_url: width: 1100 }} 1100w,
+      {{ image | image_url: width: 1500 }} 1500w,
+      {{ image | image_url: width: 1780 }} 1780w"
+      src="{{ image | image_url: width: 1780 }}"
+      sizes="(min-width: {{ settings.page_width }}px) {% if enable_desktop_slider %}{{ settings.page_width | plus: 100 | divided_by: columns_desktop }}px{% else %}calc((100vw - 10rem) / {{ columns_desktop }}){% endif %}, 
+      (min-width: 768px) {% if columns_desktop > 1 %}calc((100vw - 5rem) / 2){% else %}calc(100vw - 5rem){% endif %}, 
+      calc((100vw) / {{ columns_mobile }})"
+      loading="lazy"
+      alt="{{ image.alt | escape }}"
+      width="{{ image.width }}"
+      height="{{ image.width | divided_by: image.aspect_ratio }}"
+      style="object-position: {{ image.presentation.focal_point }};"
+      class="aspect-{{ image_ratio }} image-hover w-full h-full object-cover z-10 duration-300 transition ease-out{% if image_ratio == "round" %} rounded-full{% endif %}"
+    >
+{% endunless %}
+
+  <div class="w-full overflow-hidden pl-5 pr-5 md:pl-10 md:pr-10 z-10{% if image_ratio == "round" %}{% if image == blank %} flex relative pb-[100.0%] rounded-full items-center promotion-block-{{ block.id }} text-center{% else %} hidden{% endif %}{% else %}{% if image == blank %} relative{% else %} absolute{% endif %} top-0 right-0 bottom-0 left-0 {{ classLayout }} pt-6 pb-6 lg:pt-8 lg:pb-8 text-{{ alignment }}{% endif %}">
+    <div class="text-color--{{ block.id }}{% if image_ratio == "round" %} absolute top-1/2 -translate-y-1/2 left-4 right-4{% else %} w-full{% endif %}">
+      {%- if heading != blank and image_ratio != "round" -%}
+        <h3 class="title-{{ block.id }} text-color--{{ block.id }} mb-1 lg:mb-3 leading-tight">{{ heading }}</h3>
+      {%- endif -%}
+      {%- if content != blank and image_ratio != "round" -%}
+        <div class="text-{{ block.id }} rte text-[rgb(var(--colors-text))] truncate whitespace-normal p-break-words{% if button_label != blank %} mb-3 lg:mb-5{% endif %}">
+          {{ content }}
+        </div>
+      {%- endif -%}
+      {%- if button_label != blank -%}
+        {% if button_link %}<a href="{{ button_link }}" aria-label="{{ button_label }}"{% if open_new_window %} target="_blank"{% endif %}{% else %}<p{% endif %} class="button{% if show_button_primary %} button-solid{% else %} button-outline{% endif %} button--{{ block.id }} inline-block empty:hidden pl-4 pr-4 lg:pl-6 lg:pr-6 pt-2.5 pb-2.5 leading-normal md:pt-3 md:pb-3 cursor-pointer p-break-words{% if content == blank and image_ratio != "round" %} mt-3{% endif %}{% if button_link == blank %} hover:cursor-not-allowed opacity-70{%- endif -%}">
+          {% render 'button-label', button_label: button_label %}
+        {% if button_link %}</a>{% else %}</p>{% endif %}
+      {%- endif -%}
+    </div>
+  </div>
+  {%- if heading != blank and image_ratio == "round" -%}
+    <p class="text-color--{{ block.id }} text-center leading-tight pt-4 pb-4{% if columns_desktop <= 8 %} text-medium{% endif %}">
+      {{ heading }}
+    </p>
+  {%- endif -%}
+{% unless is_menu %}
+</div>
+{% endunless %}

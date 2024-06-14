@@ -1,0 +1,24 @@
+<ul class="flex">
+  {%- if settings.share_facebook -%}
+    <li class="w-11 h-11 opacity-70 hover:opacity-100">
+      <a class="block pl-3 pr-3 pt-3 pb-3 disable-effect lg:hover:text-[rgb(var(--colors-text-link))]" target="_blank" rel="noopener" aria-label="{{ 'general.social.alt_text.share_on_facebook' | t }}" href="//www.facebook.com/sharer.php?u={{ shop.url | append: share_permalink }}">
+        <span aria-hidden="true" class="">{% render 'icon-media', icon: 'icon-facebook' %}</span>
+      </a>
+    </li>
+  {% endif %}
+  {%- if settings.share_twitter -%}
+    <li class="w-11 h-11 opacity-70 hover:opacity-100">
+      <a class="block pl-3 pr-3 pt-3 pb-3 disable-effect lg:hover:text-[rgb(var(--colors-text-link))]" target="_blank" rel="noopener" aria-label="{{ 'general.social.alt_text.share_on_twitter' | t }}" href="//twitter.com/intent/tweet?text={{ share_title | url_param_escape }}&amp;url={{ shop.url | append: share_permalink }}">
+        <span aria-hidden="true">{% render 'icon-media', icon: 'icon-twitter' %}</span>
+      </a>
+    </li>
+  {% endif %}
+  {%- if settings.share_pinterest -%}
+    <li class="w-11 h-11 opacity-70 hover:opacity-100">
+      <a class="block pl-3 pr-3 pt-3 pb-3 disable-effect lg:hover:text-[rgb(var(--colors-text-link))]" target="_blank" rel="noopener" aria-label="{{ 'general.social.alt_text.share_on_pinterest' | t }}" href="//pinterest.com/pin/create/button/?url={{ shop.url | append: share_permalink }}&amp;media={{ share_image | image_url: '1024x1024' }}&amp;description={{ share_title | url_param_escape }}">
+        <span aria-hidden="true">{% render 'icon-media', icon: 'icon-pinterest' %}</span>
+      </a>
+    </li>
+  {%- endif -%}
+</ul>
+ 

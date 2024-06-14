@@ -1,0 +1,614 @@
+{% comment %}
+    Renders cart drawer
+
+    Usage:
+    {% render 'cart-drawer' %}
+{% endcomment %}
+
+{%- liquid 
+  assign ratio = 1
+  case settings.product_image_ratio
+    when "portrait"
+      assign ratio = 1.5
+    when "landscape"
+      assign ratio = 0.75
+    when "wide"
+      assign ratio = 0.5625
+  endcase
+  if settings.cart_type == 'drawer'
+    assign animaInit = " md:translate-y-0 md:translate-x-1/3"
+    assign animaEnd = " md:translate-x-0"
+  else
+    assign animaInit = " md:-translate-y-1/4"
+    assign animaEnd = " md:translate-y-0"
+  endif
+-%}
+<div
+  id="CartDrawer"
+  class="{{ settings.cart_type }} text-[rgb(var(--colors-text))]"
+  x-data="xCart"
+  x-init="$store.xMiniCart.type = '{{ settings.cart_type }}'"
+  x-show="$store.xMiniCart.open" 
+  x-cloak
+  @click.away="$store.xMiniCart.hideCart()"
+  @keydown.escape="$store.xModal.removeFocus(); $store.xMiniCart.hideCart();"
+>
+  <div class="{{ settings.cart_type }} fixed z-10{% if settings.cart_type == 'drawer' %} md:z-10 typeDrawer md:fixed left-0 top-0 w-full h-full md:flex md:justify-end{% else %} md:z-auto md:absolute left-0{% endif %} right-0 animate-goleft duration-300">
+    <div id="CartDrawer-Overlay" class="bg-black opacity-40 block{% if settings.cart_type == "popup" %} md:hidden{% else %} md:block{% endif %} fixed top-0 right-0 bottom-0 left-0" @click="$store.xMiniCart.hideCart()"></div>
+    {%- if settings.cart_type == "popup" -%}
+      <div class="page-width mx-auto relative">
+    {%- endif -%}
+    <div
+      id="update-cart" 
+      role="dialog"
+      aria-modal="true"
+      aria-label="{{ 'sections.cart.title' | t }}"
+      tabindex="-1"
+      class="z-30 overflow-hidden flex flex-col fixed bottom-0 left-0 md:left-auto md:bottom-auto max-h-[85vh] w-full{% if settings.cart_type == "popup" %} md:-z-[1] md:border-t md:h-auto shadow-md right-0 md:absolute{% else %} md:z-auto md:relative md:max-h-screen{% endif %} md:w-96{% if cart == empty %} lg:w-[32rem]{% endif %} bg-[rgba(var(--background-color),1)]"
+      x-show="$store.xMiniCart.open" 
+      x-data="{ show: false, productCount: 0 }"
+      x-intersect.full="$store.xModal.focus('CartDrawer', 'CloseCart'); $store.xCartAnalytics.viewCart();"
+      {% unless cart == empty %} :class="show ? 'lg:max-w-4xl lg:w-screen' : 'lg:w-[32rem]'"{% endunless %}
+      x-transition:enter="transition-all ease-in-out duration-300"
+      x-transition:enter-start="opacity-0 transform translate-y-1/3{{ animaInit }}"
+      x-transition:enter-end="opacity-100 transform translate-y-0{{ animaEnd }}"
+      x-transition:leave="transition ease-in-out duration-300"
+      x-transition:leave-end="opacity-0 transform translate-y-1/3{{ animaInit }}"
+    >
+      <button 
+        id="CloseCart"
+        class="cursor-pointer absolute w-11 h-11 pt-4 pr-4 pb-4 pl-4 z-10 right-3 lg:top-1 lg:right-10"
+        @click="$store.xModal.removeFocus(); $store.xMiniCart.hideCart();" 
+      >
+        {% render 'icon-alls', icon: 'icon-close' %}
+      </button>
+      <h2 class="relative pl-5 pr-5 lg:pl-14 lg:pr-14 pt-4 pb-4 md:pt-3 md:pb-3 xl:pt-5 xl:pb-5 z-0 text-large">{{ 'sections.cart.title' | t }}</h2>
+      <div class="flex-1 overflow-auto scrollbar-body grow pl-5 pr-5 lg:pl-14 lg:pr-14">
+        <div class="border-t flex flex-col h-full relative">
+          {%- if cart == empty -%}
+            <div class="pl-6 pr-6 flex flex-col justify-center text-center pt-14 pb-14{% unless settings.cart_type == "popup" %} md:h-screen{% endunless %}">
+              <p class="mb-16">{{ 'sections.cart.empty' | t }}</p>
+              <div class="pt-6 pb-6 pl-12 pr-12 text-center">
+                <a href="{{ settings.continue_shopping }}" class="nav-link relative cursor-pointer effect-inline">
+                  {{ 'general.continue_shopping' | t }}
+                </a>
+              </div>
+              {%- if shop.customer_accounts_enabled and customer == nil -%}
+                <p class="mt-16 mb-2">{{ 'sections.cart.login.title' | t }}</p>
+                <p class="mt-3">{{ 'sections.cart.login.paragraph_html' | t: link: routes.account_login_url }}</p>
+              {%- endif -%}
+            </div>
+          {%- else -%}
+            {% comment %} Cart items {% endcomment %}
+            <div class="relative overflow-auto scrollbar-body scrollbar-visible flex-1 z-20 pt-4 pb-4{% if settings.cart_type == 'popup' %} md:max-h-[13.5rem]{% else %} md:max-h-screen xl:pt-10 xl:pb-8{% endif %}" :class="{ 'pointer-events-none' : loading , 'lg:w-7/12 lg:pr-14 max-h-52' : show, 'lg:pr-5 max-h-96 h-full': !show }">
+              {% if settings.show_estimate_cart %}
+                <div id="x-estimate-delivery-minicart" class="mb-3 mini-cart">
+                  {%- render 'estimate-delivery-cart',
+                    items: cart.items,
+                    message: settings.message_estimate_cart,
+                    tooltip_text: settings.tooltip_text_cart,
+                    tooltip_icon: settings.tooltip_icon_cart,
+                    custom_icon: settings.custom_icon_cart,
+                    tooltip_message: settings.tooltip_message_cart,
+                    tooltip_icon_position: settings.tooltip_icon_position_cart,
+                    container_id: '#x-estimate-delivery-minicart',
+                    show_background: settings.show_background_estimate_cart,
+                    box_type: settings.box_type_estimate_cart,
+                    background_color_light: settings.background_color_light_estimate_cart,
+                    message_color_light: settings.message_color_light_estimate_cart,
+                    background_color_dark: settings.background_color_dark_estimate_cart,
+                    message_color_dark: settings.message_color_dark_estimate_cart,
+                    bg_tooltip_color_light: settings.bg_tooltip_color_light_estimate_cart,
+                    tooltip_color_light: settings.tooltip_color_light_estimate_cart,
+                    bg_tooltip_color_dark: settings.bg_tooltip_color_dark_estimate_cart,
+                    tooltip_color_dark: settings.tooltip_color_dark_estimate_cart,
+                    mini_cart: true
+                  -%}
+                </div>
+              {% endif %}
+              {% render 'freeshipping' %}
+              <form action="{{ routes.cart_url }}" id="CartDrawer-Form" class="grow flex flex-wrap" method="post">
+                <div id="CartDrawer-CartItems" class="flex grow flex-col">
+                  <div class="grow">
+                    <table class="block w-full" role="table">
+                      <thead role="rowgroup" class="mb-2 w-full sticky top-0 z-10 hidden">
+                        <tr role="row" class="bg-white table-row">
+                          <th class="w-0 border-b border-solid uppercase text-left">
+                            <span class="absolute overflow-hidden w-px h-px -m-px border-0">
+                              {{ 'sections.cart.headings.image' | t }}
+                            </span>
+                          </th>
+                          <th id="CartDrawer-ColumnProduct" 
+                            class="hidden caption-with-letter-spacing w-1/2 pl-0 border-b border-solid uppercase text-left pb-4 opacity-80 font-normal" 
+                            scope="col" 
+                            role="columnheader">
+                            {{ 'sections.cart.headings.product' | t }}
+                          </th>
+                          <th id="CartDrawer-ColumnTotal" 
+                            class="hidden right caption-with-letter-spacing text-right border-b border-solid uppercase pb-4 opacity-80 font-normal" 
+                            scope="col" 
+                            role="columnheader">
+                            {{ 'sections.cart.headings.total' | t }}
+                          </th>
+                          <th id="CartDrawer-ColumnQuantity" role="columnheader" class="w-0">
+                            <span class="hidden">
+                              {{ 'sections.cart.headings.quantity' | t }}
+                            </span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody role="rowgroup" class="w-full grid grid-cols-1 gap-y-6">
+                        {%- for item in cart.items -%}
+                          <tr class="flex relative" role="row">
+                            <td class="w-24 md:w-32 relative" role="cell" headers="CartDrawer-ColumnProductImage">
+                              <a href="{{ item.url }}" class="block disable-effect w-full">
+                                <div class="relative w-full overflow-hidden float-left before:h-0 before:block{% unless settings.product_image_ratio == "natural" %} before:pb-[{{ ratio | times: 100.0 }}%]{% endunless %}{% if settings.edges_type == 'rounded_corners' %} rounded-md{% endif %}" {% if settings.product_image_ratio == "natural" and item.image %} style="padding-bottom: {{ 1 | divided_by: item.image.aspect_ratio | times: 100 }}%;"{% endif %}>
+                                  {%- if item.image -%}
+                                    <img 
+                                      class="absolute top-0 right-0 left-0 bottom-0 object-cover h-full w-full image-hover" 
+                                      src="{{ item.image | image_url: width: 300 }}" 
+                                      alt="{{ item.image.alt | escape }}" 
+                                      loading="lazy" 
+                                      width="150"
+                                      height="{{ 150 | divided_by: item.image.aspect_ratio | ceil }}"
+                                    >
+                                  {%- else -%}
+                                    <div class="bg-[#c9c9c9]{% unless settings.product_image_ratio == "natural" %} absolute{% endunless %} top-0 left-0 w-full h-full">{%- render 'icon-placeholder', icon: 'icon-product', class: 'w-full h-full' %}</div>
+                                  {%- endif -%}
+                                </div>
+                              </a>
+                            </td>
+                            <td class="pl-5 flex-1 pr-5 lg:pr-0" role="cell" headers="CartDrawer-ColumnProduct">
+                              {%- if settings.cart_show_vendor -%}
+                                <p class="mb-2 text-small uppercase p-break-words">
+                                  {{ item.product.vendor }}
+                                </p>
+                              {%- endif -%}
+                              <div>
+                                <a href="{{ item.url }}" class="text-[rgba(var(--colors-heading))] mr-0 duration-200 transition disable-effect hover-text-link p-break-words">
+                                  {{ item.product.title | escape }}
+                                </a>
+                              </div>
+                              <div class="price mt-2 mb-2">
+                                {%- assign item_original_price = item.variant.compare_at_price | default: item.original_price -%}
+                                {%- if item_original_price > item.final_price -%}
+                                  <s class="cap mr-1 opacity-70">{%- if settings.currency_code_enable -%}{{ item_original_price | money_with_currency }}{%- else -%}{{ item_original_price | money }}{%- endif -%}
+                                  </s> 
+                                  <span class="selection:bg-text-[rgb(var(--colors-price-sale),0.2)] price-sale">
+                                    {% if settings.currency_code_enable %}
+                                      {{ item.final_price | money_with_currency }}
+                                    {% else %}
+                                      {{ item.final_price | money }}
+                                    {% endif %}
+                                  </span>
+                                {%- else -%}
+                                  {% if settings.currency_code_enable %}
+                                    {{ item.final_price | money_with_currency }}
+                                  {% else %}
+                                    {{ item.final_price | money }}
+                                  {% endif %}
+                                {%- endif -%}
+                                {%- if item.variant.available and item.unit_price_measurement -%}
+                                  <small class="flex opacity-70">
+                                    {% if settings.currency_code_enable %}
+                                      {{ item.variant.unit_price | money_with_currency }}
+                                    {% else %}
+                                      {{ item.variant.unit_price | money }}
+                                    {% endif %}
+                                    <span aria-hidden="true">/</span>
+                                    {%- if item.variant.unit_price_measurement.reference_value != 1 -%}
+                                      {{- item.variant.unit_price_measurement.reference_value -}}
+                                    {%- endif -%}
+                                    {{ item.variant.unit_price_measurement.reference_unit }}
+                                  </small>
+                                {%- endif -%}
+                              </div>
+
+                              {%- if item.product.has_only_default_variant == false or item.properties.size != 0 or item.selling_plan_allocation != nil -%}
+                                <dl>
+                                  {%- if item.product.has_only_default_variant == false -%}
+                                    {%- for option in item.options_with_values -%}
+                                      <div class="product-option flex mt-1 text-normal opacity-70 p-break-words">
+                                        <dt>{{ option.name }}:&ensp;</dt>
+                                        <dd> {{ option.value }}
+                                          {% unless forloop.last %}
+                                          {% endunless %}
+                                        </dd>
+                                      </div>
+                                    {%- endfor -%}
+                                  {%- endif -%}
+                                  {%- for property in item.properties -%}
+                                    {%- assign property_first_char = property.first | slice: 0 -%}
+                                    {%- if property.last != blank and property_first_char != '_' -%}
+                                      <div class="product-option mt-1 text-normal opacity-70 p-break-words">
+                                        <dt class="p-break-words">{{ property.first }}:
+                                        </dt>
+                                        <dd class="p-break-words">
+                                          {%- if property.last contains '/uploads/' -%}
+                                            <a href="{{ property.last }}" class="link" target="_blank">
+                                              {{ property.last | split: '/' | last }}
+                                            </a>
+                                          {%- else -%}
+                                            {{ property.last }}
+                                          {%- endif -%}
+                                        </dd>
+                                      </div>
+                                    {%- endif -%}
+                                  {%- endfor -%}
+                                </dl>          
+                                <p class="text-normal opacity-70">{{ item.selling_plan_allocation.selling_plan.name }}</p>
+                              {%- endif -%}
+                              {%- if item.discounts.size > 0 -%}
+                                <ul class="discounts pl-4 pr-4 pt-3 pb-3 bg-[rgba(var(--colors-text),0.1)] mt-4 mb-2{% if settings.edges_type == 'rounded_corners' %} rounded-md{% endif %}" role="list" aria-label="{{ 'customer.order.discount' | t }}">
+                                  {%- for discount in item.discounts -%}
+                                    <li class="flex relative">
+                                      <span class="w-4 absolute top-1/2 -translate-y-1/2 left-0">{%- render 'icon-alls', icon: 'icon-discount' -%}</span>
+                                      <span class="pl-5 text-small">{{ discount.title }}</span>
+                                    </li>
+                                  {%- endfor -%}
+                                </ul>
+                              {%- endif -%}
+                              <div id="LineItemError-{{ item.key }}" class="hidden bg-[rgba(var(--color-error),0.2)] cart-item__error mt-2 pt-3 pb-3 pr-3.5 pl-3.5 mb-3{% if settings.edges_type == 'rounded_corners' %} rounded-md{% endif %}" role="alert">
+                                <p class="flex relative w-full">
+                                  <span class="absolute left-0 top-1/2 -translate-y-1/2 w-3">{% render 'icon-alls', icon: 'icon-error' %}</span>
+                                  <span class="cart-item__error-text text-small pl-5 p-break-words"></span>
+                                </p>
+                              </div>
+                              <div class="cart-item__quantity{% unless item.discounts.size > 0 %} mt-3.5{% endunless %}" role="cell" headers="CartDrawer-ColumnQuantity">
+                                <div class="flex items-center">
+                                  <div class="relative flex w-28 h-10 border border-solid justify-between{% if settings.edges_type == 'rounded_corners' %} !rounded-md{% endif %}">
+                                    <button
+                                      class="items-center w-1/3 justify-center flex no-js-hidden opacity-70 cursor-pointer"
+                                      @click.prevent="minusItemQty('{{ item.key }}', {{ forloop.index }})"
+                                    >
+                                      {% render 'icon-alls', icon: 'icon-minus', class: "w-3" %}
+                                    </button>
+                                    <input
+                                      id="cart-qty-{{ item.key }}"
+                                      class="cart-qty outer-spin-button w-1/3 bg-[rgba(var(--background-color),1)] text-center pt-2 pb-2 placeholder:opacity-60 focus-within:outline-none"
+                                      aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}"
+                                      type="number"
+                                      value="{{ item.quantity }}"
+                                      min="0"
+                                      x-on:change="updateItemQty('{{ item.key }}', {{ forloop.index }})"
+                                    />
+                                    <button
+                                      class="items-center w-1/3 justify-center flex opacity-70 cursor-pointer"
+                                      @click.prevent="plusItemQty('{{ item.key }}', {{ forloop.index }})"
+                                    >
+                                      {% render 'icon-alls', icon: 'icon-plus', class: "w-3" %}
+                                    </button>
+                                  </div>
+                                  <button class="flex pt-2 pb-2 pl-2 pr-2 ml-2 cursor-pointer z-50 opacity-40" @click.prevent="removeItem('{{ item.key }}', {{ forloop.index }})">
+                                    <span
+                                      class="block w-5 items-center"
+                                    >
+                                      {% render 'icon-alls', icon: 'icon-remove' %}
+                                    </span>
+                                  </button>
+                                </div> 
+                              </div>
+                            </td>
+                            <td id="loading-{{ item.key }}" class="absolute hidden top-0 bottom-0 h-full w-full">
+                              <div class="absolute top-0 right-0 w-full h-full opacity-20 bg-black"></div>
+                              <div class="loading-cover">
+                                <span class="loading-bar absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></span>
+                              </div>
+                            </td>
+                          </tr>
+                        {%- endfor -%}
+                      </tbody>
+                    </table>
+                  </div> 
+                  <p id="CartDrawer-LiveRegionText" class="hidden" role="status"></p>
+                  <p id="CartDrawer-LineItemStatus" class="hidden" aria-hidden="true" role="status">{{ 'accessibility.loading' | t }}</p>
+                </div>
+                <div id="CartDrawer-CartErrors" role="alert"></div>
+              </form>
+            </div>
+
+            {% comment %} Cart upsell {% endcomment %}
+            <div
+              id="mini-cart-upsell" 
+              class="border-t lg:border-t-0 lg:absolute lg:right-0 lg:border-l lg:w-5/12 lg:h-full flex flex-col"
+              x-show="show"
+              x-cloak
+            >
+              <div class="pt-4 pb-3{% if settings.cart_type == 'drawer' %} xl:pt-8 xl:pb-5{% endif %} lg:pl-14 text-medium">{{ settings.cart_upsell_section_label }}</div>
+              <div class="scrollbar-body scrollbar-visible rtl lg:h-full lg:overflow-auto pt-2 pb-2 lg:pl-14{% if settings.cart_type == 'drawer' %} lg:h-full lg:pb-8{% endif %}">
+                <div id="x-upsell-{{ section.id }}" class="swiper upsellSwiper x-splide splide ltr" 
+                  x-intersect.once.margin.200px='$store.xSplide.load($el, {
+                    "speed": 1000,
+                    "pagination": false,
+                    "gap": "1.5rem",
+                    "mediaQuery": "min",
+                    "breakpoints": {
+                      300: { 
+                        "focus": "left",
+                        "padding": {
+                          "right": "33%"
+                        },
+                        "perPage": 1
+                      },
+                      1025: {
+                        "padding": 0, 
+                        "destroy": true 
+                      }
+                    },
+                    "classes": {
+                      "arrows" : "hidden"
+                    }
+                  })'>
+                  <div class="splide__track">
+                    <div class="splide__list w-full flex lg:grid lg:gap-5 pb-2">
+                      {%- liquid 
+                        assign productCount = 0
+                        assign productIds = cart.items | map: 'product_id' | uniq | join: ', ' | append: ","
+                        assign maxItems = settings.number_of_product_shown
+                        for item in cart.items
+                          if item.product.metafields.cart.upsell.value.count > 0
+                            for prod in item.product.metafields.cart.upsell.value
+                              if prod.available
+                                assign productId = prod.id | append: ","
+                                unless productIds contains productId
+                                  assign productIds = productIds | append: productId
+                                  assign productCount = productCount | plus: 1
+                                  render 'mini-card-product', card_product: prod, media_aspect_ratio: settings.product_image_ratio, ratio: ratio, class_splide: " splide__slide x-splide-slide"
+                                endunless
+                              endif
+                              if productCount >= maxItems
+                                break
+                              endif
+                            endfor
+                          endif
+                        endfor
+                        if productCount == 0
+                          for prod in settings.cart_upsell_product_list
+                            if prod.available
+                              assign productId = prod.id | append: ","
+                              unless productIds contains productId
+                                assign productIds = productIds | append : productId
+                                assign productCount = productCount | plus : 1
+                                render 'mini-card-product', card_product: prod, media_aspect_ratio: settings.product_image_ratio, ratio: ratio, class_splide: " splide__slide x-splide-slide"
+                              endunless
+                            endif
+                            if productCount >= maxItems
+                              break
+                            endif
+                          endfor
+                        endif
+                      -%}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div x-init="() => {
+                productCount = {{ productCount }};
+                if (productCount > 0) {
+                  show = true;
+                } else {
+                  show = false;
+                }
+              }"></div>
+            </div>
+            {% comment %} Cart custom field {% endcomment %}
+            {%- if settings.show_cart_custom_field and settings.cart_custom_field_label != blank -%}
+              {%- capture cartFieldsData -%}
+                {
+                  "custom_field_label": "{{ settings.cart_custom_field_label }}",
+                  "custom_field_required": {{ settings.cart_custom_field_required | default: false }},
+                  "custom_field_pattern": "{{ settings.cart_custom_field_pattern }}"
+                }
+              {%- endcapture %}
+              <div
+                x-data="xCartFields"
+                x-intersect="loadData"
+                x-cart-fields-data='{{ cartFieldsData | escape }}'
+                class="relative"
+                :class="show && 'lg:w-7/12 lg:pr-14'"
+              >
+                <button
+                  class="flex items-center relative border-solid border-t w-full pt-3 pb-3 xl:pt-4 xl:pb-4 cursor-pointer"
+                  @click.prevent="$store.xCartHelper.openField = ($store.xCartHelper.openField == 'custom_field') ? false : 'custom_field'"
+                >
+                  <div class="summary__title">{{ settings.cart_custom_field_label }}{% if settings.cart_custom_field_required %}<span class="pl-1" aria-hidden="true">*</span>{% endif %}</div>
+                  <span
+                    class="w-3 block absolute right-1 opacity-70"
+                    {% if settings.cart_type == "popup" %}
+                      :class="$store.xCartHelper.openField == 'custom_field' && 'rotate-180 md:rotate-180'"
+                    {% else %}
+                      :class="$store.xCartHelper.openField == 'custom_field' ? 'rotate-180 md:rotate-0' : 'md:rotate-180'"
+                    {% endif %}
+                  >
+                    {% render 'icon-alls', icon: 'icon-caret' %}
+                  </span>
+                </button>
+                <div
+                  class="pb-4 bg-[rgba(var(--background-color),1)] w-full z-20 pl-[1px] pr-[1px]"
+                  x-show="$store.xCartHelper.openField == 'custom_field'"
+                  {% if settings.cart_type == 'popup' %}
+                    :class="{ 'pt-3 xl:pt-0 absolute': $store.xCartHelper.openField == 'custom_field', 'lg:pr-14': show }"
+                  {% else %}
+                    :class="$store.xCartHelper.openField == 'custom_field' && 'pt-3 xl:pt-0 absolute md:relative'"
+                  {% endif %}
+                  @keydown.escape.stop="$store.xCartHelper.openField = false"
+                >
+                  <label class="hidden" for="x-cart-custom-field">{{ settings.cart_custom_field_label }}</label>
+                  <input
+                    id="x-cart-custom-field"
+                    type="text"
+                    {% if settings.cart_custom_field_required %}
+                      :class="custom_field_error && 'border-[rgba(var(--color-error))] shadow-[0_0_0_1px_rgba(var(--color-error))]'"
+                    {% endif %}
+                    class="w-full pl-4 pr-4 pt-4 pb-4 border border-solid bg-[rgba(var(--background-color),1)] focus-within:outline-none placeholder:text-current placeholder:opacity-60{% if settings.edges_type == 'rounded_corners' %} !rounded-md{% endif %}"
+                    placeholder="{{ settings.cart_custom_field_label }}"
+                    x-model="custom_field"
+                  />
+                  {% if settings.cart_custom_field_required %}
+                    <p x-cloak x-show="custom_field_error" class="text-[rgba(var(--color-error))] mt-2">{{ 'sections.cart.required_cart_note' | t }} {{ settings.cart_custom_field_label }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            {%- endif -%}
+            <div :class="show && 'lg:w-7/12 lg:pr-14'">
+              <div class="border-solid border-t flex flex-wrap justify-between gap-2">
+                {% comment %} Cart note {% endcomment %}
+                {%- if settings.show_cart_note -%}
+                  <textarea x-ref="cart_field_note_data" hidden>{{- cart.note -}}</textarea>
+                  <button
+                    class="flex items-center relative pt-3 pb-3 xl:pt-4 xl:pb-4 cursor-pointer underline"
+                    @click.prevent="$store.xCartHelper.openField = ($store.xCartHelper.openField == 'note') ? false : 'note'">
+                    <div class="summary__title">
+                      {{ 'sections.cart.note' | t }}
+                    </div>
+                  </button>
+                {%- endif -%}
+                {% comment %} estimate shipping {% endcomment %}
+                {% if settings.enable_estimate_shipping %}
+                  <button class="flex items-center relative pt-3 pb-3 xl:pt-4 xl:pb-4 cursor-pointer underline">
+                    <p @click="$store.xPopupShipping.open = true;">{{ 'shipping.estimate' | t }}</p>
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div
+              class="lg:float-left" {{ block.shopify_attributes }}
+              :class="show && 'lg:pr-14 lg:w-7/12'"
+            >
+              <div class="pt-3{% if settings.cart_type == 'drawer' %} xl:pt-7{% endif %} flex justify-between items-end text-medium" role="status">
+                <p>{{ 'sections.cart.subtotal' | t }}
+                </p>
+                <p class="ml-8" id="total-price">{{ cart.total_price | money_with_currency }}
+                </p>
+              </div> 
+              {%- if cart.cart_level_discount_applications.size > 0 -%}
+                <ul role="list" aria-label="{{ 'customer.order.discount' | t }}">
+                  {%- for discount in cart.cart_level_discount_applications -%}
+                    <li class="flex relative justify-end items-center text-small">
+                      <span class="w-4 top-1/2">{%- render 'icon-alls', icon: 'icon-discount' -%}</span>
+                      <span class="pl-1 pr-1 p-break-words">{{ discount.title }}</span>
+                       (-{{ discount.total_allocated_amount | money_with_currency }})
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              {%- endif -%} 
+              <p class="mt-2 xl:mt-3 mb-2 xl:mb-4 block text-normal">
+                {%- if cart.taxes_included and shop.shipping_policy.body != blank -%}
+                  {{ 'sections.cart.taxes_included_and_shipping_policy_html' | t: link: shop.shipping_policy.url }}
+                {%- elsif cart.taxes_included -%}
+                  {{ 'sections.cart.taxes_included_but_shipping_at_checkout' | t }}
+                {%- elsif shop.shipping_policy.body != blank -%}
+                  {{ 'sections.cart.taxes_and_shipping_policy_at_checkout_html' | t: link: shop.shipping_policy.url }}
+                {%- else -%}
+                  {{ 'sections.cart.taxes_and_shipping_at_checkout' | t }}
+                {%- endif -%}
+              </p>
+            </div>
+            {%- if settings.cart_enable_terms_and_conditions -%}
+              <div x-data="xCartTerm" class="relative lg:float-left lg:pr-14" :class="show && 'lg:w-7/12'">
+                <div class="pb-5 flex items-center eurus">
+                  <input
+                    id="x-cart-agree" 
+                    class="checkbox-checked h-4 w-4 cursor-pointer border checked:border-[rgba(var(--colors-text-link))] checked:bg-[rgba(var(--colors-text-link))] relative mr-2{% if settings.edges_type == 'rounded_corners' %} rounded{% else %} rounded-none{% endif %}" 
+                    type="checkbox"
+                    x-model="checked"
+                  />
+                  <label for="x-cart-agree" class="cursor-pointer">
+                    {% if settings.cart_terms_and_conditions_page != blank %}
+                      {{ 'sections.cart.cart_enable_terms_and_conditions_html' | t: url: settings.cart_terms_and_conditions_page.url }}
+                    {% else %}
+                      {{ 'sections.cart.cart_enable_terms_and_conditions' | t }}
+                    {% endif %}
+                  </label>
+                </div>
+                <p class="clear-left text-[rgba(var(--color-error))] mt-2 text-normal absolute bottom-0" x-show="!checked" x-cloak>{{ 'general.cart.terms_confirm' | t }}</p>
+              </div>
+              <script src="{{ 'cart-term.js' | asset_url }}" defer></script>
+            {%- else -%}
+              <input id="x-cart-agree" class="hidden" type="checkbox" checked="checked" />
+            {%- endif -%}
+            <div class="flex lg:gap-1 text-center mt-3 pb-5{% if settings.cart_type == 'drawer' %} xl:pb-9 md:mt-4{% endif %} lg:float-left" :class="show && 'lg:pr-14 lg:w-7/12'" {{ block.shopify_attributes }}>
+              {% unless settings.hide_view_cart_button %}
+                <a href="{{ routes.cart_url }}" class="button button-outline leading-normal pt-2.5 pb-2.5 md:pt-3 md:pb-3 cursor-pointer w-1/2 justify-center mr-1 inline-flex disable-effect">
+                  {% assign button_label = 'sections.cart.view_cart' | t %}
+                  {% render 'button-label', button_label: button_label %}
+                </a>
+              {%- endunless -%}
+              <button
+                id="checkout-submit"
+                class="button button-solid leading-normal ml-1 button{% if settings.hide_view_cart_button %} w-full {% else %} w-1/2{% endif %} justify-center pt-2.5 pb-2.5 md:pt-3 md:pb-3 cursor-pointer" 
+                type="submit"
+                name="checkout"
+                form="CartDrawer-Form"
+                @click="$store.xCartHelper.goToCheckout($event)"
+                {% if cart == empty %}disabled{% endif %}
+              >
+                {% assign button_label = 'sections.cart.checkout' | t %}
+                {% render 'button-label', button_label: button_label %}
+              </button>
+            </div>
+          {%- endif -%}
+        </div>
+      </div>
+
+      {% comment %} Cart note {% endcomment %}
+      {%- if settings.show_cart_note -%}
+        <div class="" >
+          <div x-show="$store.xCartHelper.openField == 'note'" x-cloak class="absolute z-20 top-0 left-0 w-full h-full bg-black bg-opacity-20"></div>
+          <div class="absolute bottom-0 left-0 w-full z-20 pt-10 pb-14 pr-5 pl-5 lg:pl-14 lg:pr-14 bg-[rgba(var(--colors-background),1)]" 
+            :class="show && 'lg:w-[57.33%]'" 
+            x-show="$store.xCartHelper.openField == 'note'" x-cloak
+            @click.away="$store.xCartHelper.openField = false"
+            x-transition:enter="transition-all ease-in-out duration-300"
+            x-transition:enter-start="transform translate-y-full"
+            x-transition:enter-end="transform translate-y-0"
+            x-transition:leave="transition-all ease-in-out duration-300"
+            x-transition:leave-end="transform translate-y-full">
+            <div class="w-full flex items-center justify-between mb-6">
+              <p class="h4 text-medium">{{ 'sections.cart.note' | t }}</p>
+              <button class="inline-block w-5 h-5 p-1" @click="$store.xCartHelper.openField = false">{% render 'icon-alls', icon: 'icon-close' %}</button>
+            </div>
+            <textarea
+              id="x-cart-note"
+              rows="4" 
+              cols="50" 
+              class="w-full pl-4 pr-4 pt-4 pb-4 border border-solid bg-[rgba(var(--background-color),1)] focus-within:outline-none placeholder:text-current placeholder:opacity-60{% if settings.edges_type == 'rounded_corners' %} !rounded-md{% endif %}"
+              placeholder="{{ 'sections.cart.note' | t }}"
+              @change="$store.xCartHelper.updateCart({ note: $el.value})"
+            >{{- cart.note -}}</textarea>
+          </div>
+        </div>
+      {%- endif -%}
+      
+      {% comment %} estimate shipping {% endcomment %}
+      {% if settings.enable_estimate_shipping %}
+        <div class="" >
+          <div x-show="$store.xPopupShipping.open" x-cloak class="absolute z-20 top-0 left-0 w-full h-full bg-black bg-opacity-20"></div>
+          <div class="scrollbar-body scrollbar-visible overflow-y-auto max-h-full absolute bottom-0 left-0 w-full z-20 pt-10 pb-14 pr-5 pl-5 lg:pl-14 lg:pr-14 bg-[rgba(var(--colors-background),1)]" 
+            :class="show && 'lg:w-[57.33%]'" 
+            x-show="$store.xPopupShipping.open" x-cloak
+            @click.away="$store.xPopupShipping.open = false"
+            x-transition:enter="transition-all ease-in-out duration-300"
+            x-transition:enter-start="transform translate-y-full"
+            x-transition:enter-end="transform translate-y-0"
+            x-transition:leave="transition-all ease-in-out duration-300"
+            x-transition:leave-end="transform translate-y-full">
+            
+            {% render 'estimate-shipping-rate', mini_cart: true %}
+          </div>
+        </div>
+      {% endif %}
+      {% comment %} end estimate shipping {% endcomment %}
+    </div>
+    {%- if settings.cart_type == "popup" -%}
+    </div>
+    {%- endif -%}
+  </div>
+</div>
+{%- if settings.show_cart_custom_field and settings.cart_custom_field_label != blank -%}
+  <script src="{{ 'cart-fields.js' | asset_url }}" defer></script>
+{%- endif -%}
+{%- if settings.cart_enable_terms_and_conditions -%}
+  <script src="{{ 'cart-term.js' | asset_url }}" defer></script>
+{%- endif -%}

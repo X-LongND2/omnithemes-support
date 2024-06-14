@@ -1,0 +1,56 @@
+{%- liquid
+  if use_variant
+    assign target = product.selected_or_first_available_variant
+  else
+    assign target = product
+  endif
+
+  assign compare_at_price = target.compare_at_price
+  assign price = target.price | default: 1999
+  if settings.currency_code_enable
+    assign money_price = price | money_with_currency
+  else 
+    assign money_price = price | money
+  endif 
+
+  if target == product and product.price_varies
+    assign money_price = 'products.product.price.from_price_html' | t: price: money_price
+  endif
+-%}
+<div class="{{ container }} price leading-none text-[{{ settings.text_base_size | times: 0.007875 }}rem] md:text-[{{ settings.text_base_size | times: 0.00875 }}rem]">
+  <div class="no-collage:mb-2">
+    {%- if compare_at_price > price %}
+      <div{% if price_class != blank %} class="{{ price_class }}"{% endif %}>
+        {%- unless product.price_varies == false and product.compare_at_price_varies %}
+          <small class="cap mr-1">
+            <s>{% if settings.currency_code_enable %}{{ compare_at_price | money_with_currency }}{% else %}{{ compare_at_price | money }}{% endif %}</s>
+          </small>
+        {%- endunless -%}
+        <span {% unless product.price_varies == false and product.compare_at_price_varies %} class="price-sale selection:bg-text-[rgb(var(--colors-price-sale),0.2)]"{% endunless %}>{{ money_price }}</span>
+      </div>
+    {%- else -%}
+      <p class="price{% if price_class != blank %} {{ price_class }}{% endif %}">
+        <span>{{ money_price }}</span>
+      </p>
+    {%- endif -%}
+    <small class="text-[70%]{% if product.selected_or_first_available_variant.unit_price_measurement == nil %} hidden{% endif %}">
+      <span class="hidden">{{ 'products.product.price.unit_price' | t }}</span>
+      <span class="up price-item price-item--last">
+        <span>{% if settings.currency_code_enable %}
+            {{- product.selected_or_first_available_variant.unit_price | money_with_currency -}}
+          {% else %}
+            {{- product.selected_or_first_available_variant.unit_price | money -}}
+          {% endif %}
+        </span>
+        <span aria-hidden="true">/</span>
+        <span class="hidden">&nbsp;{{ 'accessibility.unit_price_separator' | t }}&nbsp;</span>
+        <span>
+          {%- if product.selected_or_first_available_variant.unit_price_measurement.reference_value != 1 -%}
+            {{- product.selected_or_first_available_variant.unit_price_measurement.reference_value -}}
+          {%- endif -%}
+          {{ product.selected_or_first_available_variant.unit_price_measurement.reference_unit }}
+        </span>
+      </span>
+    </small>
+  </div>
+</div>

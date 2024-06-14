@@ -1,0 +1,50 @@
+{% comment %}
+    Renders an article card for a given blog with settings to either show the image or not.
+
+    Accepts:
+    - blog: {Object} Blog object
+    - article: {Object} Article object
+    - add_divider: {Boolean} The setting either add the divider blog post or not.
+    - loading: {Boolean} Image should be lazy loaded. Default: lazy (optional)
+    - columns_desktop: {Number} Number blog of columns on desktop,
+    - blog_page: {Boolean} Is it a blog page or not?
+    Usage:
+    {% render 'article-card', blog: blog, article: article %}
+{% endcomment %}
+{% if link.type == 'collection_link' and show_image_collection %}
+  {%- liquid
+    assign subcollection_handle = link.object.handle
+    assign card_collection = collections[subcollection_handle]
+    assign featured_image = blank
+    if card_collection.image != blank
+      assign featured_image = card_collection.image
+    elsif show_first_image_product and card_collection.featured_image
+      assign featured_image = card_collection.featured_image
+    endif
+  -%}
+  {% if featured_image != blank %}
+    <a href="{{ link.url }}" class="inline-block relative overflow-hidden {{ class_ratio }}{% if settings.edges_type == 'rounded_corners' %} rounded{% endif %}">
+      <img
+        srcset="{{ featured_image | image_url: width: 100 }} 100w,
+        {{ featured_image | image_url: width: 225 }} 225w,
+        {{ featured_image | image_url: width: 375 }} 375w,
+        {{ featured_image | image_url: width: 450 }} 450w,
+        {{ featured_image | image_url: width: 750 }} 750w,
+        {{ featured_image | image_url: width: 900 }} 900w,
+        {{ featured_image | image_url: width: 1100 }} 1100w,
+        {{ featured_image | image_url: width: 1500 }} 1500w,
+        {{ featured_image | image_url: width: 1780 }} 1780w"
+        src="{{ featured_image | image_url: width: 3840 }}"
+        sizes="{%- unless image_left -%}
+          (min-width: 768px) calc({{ settings.page_width }}px / {{ column | plus: 1 }}),
+        {% endunless %}
+        (min-width: 768px) 100px"
+        alt="{{ featured_image.alt | escape }}"
+        height="{{ featured_image.height }}"
+        width="{{ featured_image.width }}"
+        loading="lazy"
+        class="w-full h-full object-cover z-10 object-center image-hover absolute top-0 right-0"
+      >
+    </a>
+  {% endif %}
+{% endif %}

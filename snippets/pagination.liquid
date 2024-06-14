@@ -1,0 +1,79 @@
+{% comment %}
+    Renders a set of links for paginated results. Must be used within paginate tags.
+
+    Usage:
+    {% paginate results by 2 %}
+      {% render 'pagination', paginate: paginate, anchor: '#yourID' %}
+    {% endpaginate %}
+
+    Accepts:
+    - paginate: {Object}
+    - anchor: {String} (optional) This can be added so that on page reload it takes you to wherever you've placed your anchor tag.
+{% endcomment %}
+{%- if paginate.parts.size > 0 -%}
+  <div class="md:max-w-[80%] flex items-center flex-wrap{% if blog_page %} justify-center md:justify-start{% endif %}{% if enable_blog_detail %} md:max-w-full justify-center border-t pt-3.5 md:pt-6 md:mt-1{% endif %}">
+    <nav class="pagination" role="navigation" aria-label="{{ 'general.pagination.label' | t }}">
+      <ul class="flex items-center justify-center lg:justify-start flex-wrap font-medium{% if paginate_type == 'underline' %} gap-2{% else %} gap-x-4{% endif %}" role="list">
+      {%- if paginate.previous -%}
+        <li class="{% if paginate_type == 'circle' %}rotate-180{% else %} mr-5 flex{% endif %}">
+          <a href="{{ paginate.previous.url }}{{ anchor }}" class="{% if paginate_type == 'circle' %}md:p-4 p-3.5 block{% else %} flex items-center pl-3 pr-3 pt-2 pb-2 border-b-2 border-solid duration-200 paginate-underline{% endif %} disable-effect" aria-label="{{ 'general.pagination.previous' | t }}" data-instant-allow-query-string>
+            {% if paginate_type == 'underline' %}
+              <span class="h-2 w-3 inline-block rotate-90">
+                {% render 'icon-alls', icon: 'icon-caret' %}
+              </span>
+              <p class="ml-2">{{ 'general.pagination.previous' | t }}</p>
+            {% else %}
+              <span class="w-4 h-4 block">
+                {% render 'icon-alls', icon: 'icon-arrow' %}
+              </span>
+            {% endif %}
+          </a>
+        </li>
+      {%- endif -%}
+      {%- for part in paginate.parts -%}
+        {% if paginate_type == 'circle' %}
+          <li class="mt-1 mb-1 md:w-14 md:h-14 flex items-center justify-center">
+            {%- if part.is_link -%}
+              <a href="{{ part.url }}{{ anchor }}" class="md:w-14 md:h-14 disable-effect bg-auto bg-none w-11 h-11 bg-[rgba(var(--colors-text),0.2)] rounded-full flex items-center justify-center" aria-label="{{ 'general.pagination.page' | t: number: part.title }}" data-instant-allow-query-string>{{ part.title }}</a>
+            {%- else -%}
+              {%- if part.title == paginate.current_page -%}
+                <p aria-disabled="true" class="button button-action boder-none md:w-14 md:h-14 w-11 h-11 rounded-full flex items-center justify-center" aria-current="page" aria-label="{{ 'general.pagination.page' | t: number: part.title }}">{{ part.title }}</p>
+              {%- else -%}
+                <span class="pagination__item">{{ part.title }}</span>
+              {%- endif -%}
+            {%- endif -%}
+          </li>
+        {% else %}
+          <li class="flex">
+            {%- if part.is_link -%}
+              <a href="{{ part.url }}{{ anchor }}" class="disable-effect pl-4 pr-4 pt-2 pb-2 border-b-2 border-solid paginate-underline duration-200" aria-label="{{ 'general.pagination.page' | t: number: part.title }}" data-instant-allow-query-string>{{ part.title }}</a>
+            {%- else -%}
+              {%- if part.title == paginate.current_page -%}
+                <a aria-disabled="true" class="disable-effect pl-4 pr-4 pt-2 pb-2 border-b-2 border-solid paginate-underline-active" aria-current="page" aria-label="{{ 'general.pagination.page' | t: number: part.title }}">{{ part.title }}</a>
+              {%- else -%}
+                <span class="pl-4 pr-4 pt-2 pb-2">{{ part.title }}</span>
+              {%- endif -%}
+            {%- endif -%}
+          </li>
+        {% endif %}
+      {%- endfor -%}
+      {%- if paginate.next -%}
+        <li class="{% if paginate_type == 'underline' %} ml-5 flex{% endif %}">
+          <a href="{{ paginate.next.url }}{{ anchor }}" class="{% if paginate_type == 'circle' %}md:p-4 p-3.5 block{% else %} flex items-center pl-4 pr-4 pt-2 pb-2 paginate-underline duration-200 border-b-2 border-solid{% endif %} disable-effect" aria-label="{{ 'general.pagination.next' | t }}" data-instant-allow-query-string>
+            {% if paginate_type == 'underline' %}
+              <p class="mr-2">{{ 'general.pagination.next' | t }}</p>
+              <span class="h-2 w-3 inline-block -rotate-90">
+                {% render 'icon-alls', icon: 'icon-caret' %}
+              </span>
+            {% else %}
+              <span class="w-4 h-4 block">
+                {% render 'icon-alls', icon: 'icon-arrow' %}
+              </span>
+            {% endif %}
+          </a>
+        </li>
+      {%- endif -%}
+      </ul>
+    </nav>
+  </div>
+{%- endif -%}

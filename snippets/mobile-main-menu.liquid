@@ -1,0 +1,115 @@
+{% comment %}
+    Renders a mobile Nav
+
+    Accepts:
+    - links: {Array} Menu navigation of menu item or main menu navigation. Default: "main-menu"
+    - start_level: {Number} Level which menu start with
+    - start_id: {String} Id which menu start with
+    - title: {String} Text of menu item (optional)
+    - link: {String} Link url of menu item (optional)
+
+    Usage:
+    {% render 'mobile-main-menu', links: section.settings.menu.links, start_level: 0, start_id: '' %}
+{% endcomment %}
+{%- for link in links -%}
+  {%- liquid
+    assign is_link = false
+    if link.links != blank
+      assign is_link = true
+    endif
+    assign menu_level1_id = start_id | append: '-' | append: forloop.index
+  -%}
+  <div {% if is_link %}@click="{% if start_level > 0 %}$store.xMobileNav.scrollTop(); {% endif %}$store.xMobileNav.setActiveLink('{{ menu_level1_id }}')"{% endif %} class="flex items-center ml-5 mr-5 border-b" {%- if link.current or link.child_active %}x-init="active = true;"{% endif %}>
+    {% if is_link %}<p{% else %}<a href="{{ link.url }}"{% endif %} class="flex-1 pt-3.5 pb-3.5 flex items-center disable-effect{% if link.current or link.child_active %} effect-inline active{% endif %}">
+      <span class="p-break-words">{{ link.title | escape }}</span>
+    {% if is_link %}</p>{% else %}</a>{% endif %}
+    {%- if is_link -%}
+      <span
+        class="icon-caret-mobile h-11 w-8 pt-4 pl-2.5 pr-2 block -rotate-90{%- if link.child_active %} text-[rgba(var(--colors-text-link))]{% endif %}"
+      >{% render 'icon-alls', icon: 'icon-caret' %}</span>
+    {%- endif -%}
+  </div>
+  {%- if is_link -%}
+    <div
+      class="menu-drawer top-0 left-0 absolute background-header w-full h-full z-30 translate-x-full invisible"
+      :class="$store.xMobileNav.currentMenuLinks.includes('{{ menu_level1_id }}') && 'menu-opening'"
+      :class="$store.xMobileNav.currentMenuLinks.length == {{ start_level | plus: 1 }} ? 'visible' : 'invisible'"
+      >
+      <ul 
+        id="menu-level-{{ start_level | plus: 1 }}"
+        class="top-0 background-header w-full h-full z-30 overflow-auto scrollbar-body" 
+        >
+        <div class="flex items-center text-right justify-between ml-5 mr-5 border-y">
+          <span class="h-11 w-8 pt-4 pr-2.5 pl-2 mr-4 block border-t border-solid rotate-90" @click="$store.xMobileNav.removeActiveLink('{{ menu_level1_id }}'); ">{% render 'icon-alls', icon: 'icon-caret' %}</span>
+          <a href="{{ link.url }}" class="pt-4 pb-4 flex-1 font-semibold disable-effect{% if link.current or link.child_active %} active{% endif %}">
+            <span class="p-break-words">{{ link.title | escape }}</span>
+          </a>
+        </div>
+        {%- for childlink in link.links -%}
+          {%- liquid
+            assign is_link = false
+            if childlink.links != blank
+              assign is_link = true
+            endif
+
+            assign menu_level2_id = menu_level1_id | append: '-' | append: forloop.index
+          -%}
+          <li {%- if childlink.current or childlink.child_active %}x-init="active = true;"{% endif %}>
+            <div class="items-center"> 
+              <div
+                class="flex items-center border-b justify-between ml-5 mr-5"
+                {% if is_link %}@click="$store.xMobileNav.setActiveLink('{{ menu_level2_id }}');"{% endif %}
+              >
+                {% if is_link %}<p{% else %}<a href="{{ childlink.url }}"{% endif %} class="p-break-words flex-1 pt-3.5 pb-3.5 disable-effect items-center{% if childlink.current or childlink.child_active %} text-[rgba(var(--colors-text-link))] active{% endif %}">
+                  {{ childlink.title | escape }}
+                {% if is_link %}</p>{% else %}</a>{% endif %}
+                {%- if is_link -%}
+                  <span
+                    class="icon-caret-mobile h-11 w-8 pt-4 pl-2.5 pr-2 -rotate-90 block pb-1{% if childlink.current or childlink.child_active %} text-[rgba(var(--colors-text-link))]{% endif %}"
+                  >
+                    {% render 'icon-alls', icon: 'icon-caret' %}
+                  </span>
+                {%- endif -%}
+              </div>
+              {%- if is_link -%}
+                <div
+                  class="menu-drawer top-0 left-0 absolute background-header w-full h-full z-30 translate-x-full invisible" 
+                  :class="$store.xMobileNav.currentMenuLinks.includes('{{ menu_level2_id }}') && 'menu-opening'"
+                  :class="$store.xMobileNav.currentMenuLinks.length == {{ start_level | plus: 2 }} ? 'visible' : 'invisible'"
+                >
+                  <ul
+                    id="menu-level-{{ start_level | plus: 2 }}"
+                    class="w-full top-0 background-header absolute h-full left-0 overflow-y-auto scrollbar-body z-30"
+                  >
+                    <div
+                      class="flex items-center text-right justify-between ml-5 mr-5 border-y"
+                    >
+                      <span
+                        class="h-11 w-8 pt-4 pr-2.5 pl-2 mr-4 block border-t border-solid rotate-90{%- if childlink.current %} text-[rgba(var(--colors-text-link))]{% endif %}"
+                        @click="$store.xMobileNav.removeActiveLink('{{ menu_level2_id }}')"
+                      >{% render 'icon-alls', icon: 'icon-caret' %}</span>
+                      <a href="{{ childlink.url }}" class="p-break-words pt-4 pb-4 flex-1 font-semibold disable-effect{% if childlink.current %} effect-inline active{% endif %}">
+                        {{ childlink.title | escape }}
+                      </a>
+                    </div>
+                    {%- for grandchildlink in childlink.links -%}
+                      <li class="pl-5 pr-5" {%- if childlink.current or childlink.child_active %}x-init="active = true;"{% endif %}>
+                        <a
+                          href="{{ grandchildlink.url }}"
+                          class="p-break-words border-b pt-3.5 pb-3.5 disable-effect flex items-center{% if grandchildlink.current %} effect-inline active{% endif %}"
+                          {% if grandchildlink.current %} aria-current="page"{% endif %}
+                        >
+                          {{ grandchildlink.title | escape }}
+                        </a>
+                      </li>
+                    {%- endfor -%}
+                  </ul>
+                </div>
+              {%- endif -%}
+            </div>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </div>
+  {%- endif -%}
+{%- endfor -%}

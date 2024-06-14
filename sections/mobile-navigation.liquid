@@ -1,0 +1,425 @@
+{%- liquid
+  assign show_custom_menu = false
+  for block in section.blocks
+    if block.type == 'menu'
+      assign show_custom_menu = true
+    endif
+  endfor
+  if section.settings.show_currency_selector or section.settings.show_language_selector
+    assign show_language = true
+  else
+    assign show_language = false
+  endif
+-%}
+{%- style -%}
+  #mobile-navigation * {
+    {%- if section.settings.divider_color.alpha != 0.0 -%}
+      border-color: {{ section.settings.divider_color }};
+    {%- else -%}
+      border-color: rgba(var(--colors-line-header));
+    {%- endif -%}
+  }
+  .dark #mobile-navigation * {
+    {%- if section.settings.divider_color_dark.alpha != 0.0 -%}
+      border-color: {{ section.settings.divider_color_dark }};
+    {%- else -%}
+      border-color: rgba(var(--colors-line-header));
+    {%- endif -%}
+  } 
+  .dark #mobile-navigation .text-color,
+  #mobile-navigation .background-header {
+    {%- if section.settings.background_color.alpha != 0.0 -%}
+      background: {{ section.settings.background_color }};
+    {%- else -%}
+      background: rgba(var(--background-color-header));
+    {%- endif -%}
+    {%- if section.settings.text_color.alpha != 0.0 -%}
+      --colors-heading: {{ settings.text_color.red }}, {{ settings.text_color.green }}, {{ settings.text_color.blue }};
+      color: {{ section.settings.text_color }};
+    {%- else -%}
+      --colors-text: {{ settings.colors_text.red }}, {{ settings.colors_text.green }}, {{ settings.colors_text.blue }};
+      --colors-heading: {{ settings.colors_heading.red }}, {{ settings.colors_heading.green }}, {{ settings.colors_heading.blue }};
+    {%- endif -%}
+  }
+  .dark #mobile-navigation .text-color,
+  .dark #mobile-navigation .background-header {
+    {%- if section.settings.background_color_dark.alpha != 0.0 -%}
+      background: {{ section.settings.background_color_dark }};
+    {%- else -%}
+      background: #000000;
+    {%- endif -%}
+    {%- if section.settings.text_color_dark.alpha != 0.0 -%}
+      --colors-heading: {{ section.settings.text_color_dark.red }}, {{ section.settings.text_color_dark.green }}, {{ section.settings.text_color_dark.blue }};
+      color: {{ section.settings.text_color_dark }};
+    {%- else -%}
+      --colors-text: {{ settings.colors_dark_text.red }}, {{ settings.colors_dark_text.green }}, {{ settings.colors_dark_text.blue }};
+      --colors-heading: {{ settings.colors_dark_heading.red }}, {{ settings.colors_dark_heading.green }}, {{ settings.colors_dark_heading.blue }};
+    {%- endif -%}
+  }
+{%- endstyle -%}
+<div
+  class="z-50 fixed top-0 h-full w-full opacity-60 bg-black"
+  x-show="$store.xMobileNav.show"
+  x-cloak
+  @click="$store.xMobileNav.close()"
+></div>
+<div
+  id="mobile-navigation"
+  :class="$store.xMobileNav.show && 'menu-opening'" 
+  class="menu-drawer fixed z-50 left-0 top-0 bottom-0 w-10/12 max-w-sm motion-reduce -translate-x-full invisible overflow-x-hidden" 
+>
+  <div class="background-header gradient menu-drawer pt-5 overflow-hidden h-full flex flex-col">
+    <div class="h-10 w-full text-right pr-2 pl-2" aria-label="{{ 'accessibility.close' | t }}">
+      <span
+        class="cursor-pointer w-11 h-8 inline-block pt-2 pb-2 pl-2 pr-2"
+        @click="$store.xMobileNav.close()"
+      >{% render 'icon-alls', icon: 'icon-close' %}</span>
+    </div>
+    <div
+      id="menu-navigation"
+      class="relative h-full flex-1 overflow-x-hidden scrollbar-body"
+      :class="$store.xMobileNav.currentMenuLinks.length == 0 ? ' overflow-y-auto' : 'overflow-hidden'">
+      <ul 
+        id="menu-level-0"
+        role="list" 
+        class="menu-parent relative w-full h-full" 
+      >
+        {% comment %}theme-check-disable LiquidTag{% endcomment %} 
+        {%- unless show_custom_menu -%}
+          {%- if section.settings.menu != blank -%}
+            <li>
+              <span class="flex border-t ml-5 mr-5"></span>
+              {%- render 'mobile-main-menu',
+                links: section.settings.menu.links,
+                start_level: 0,
+                start_id: ''
+              -%}
+            </li>
+          {%- endif -%}
+        {%- endunless -%}
+        
+        {%- for block in section.blocks -%}
+          {%- case block.type -%}
+            {%- when 'menu' -%}
+              {%- if block.settings.heading != blank -%}
+                {%- assign index = forloop.index -%}
+                {%- liquid
+                  assign link = false
+                  assign is_link = false
+                  if block.settings.menu_item_link
+                    assign link = block.settings.menu_item_link
+                  endif
+                  if block.settings.menu.links != blank
+                    assign is_link = true
+                  endif
+                -%} 
+                <li x-data='{ active: false }' class="block-mobile-navigation" {{ block.shopify_attributes }}>
+                  <div {% if is_link %}@click="$store.xMobileNav.setActiveLink('{{ index }}'); $store.xMobileNav.scrollTop();"{% endif %} class="flex items-center ml-5 mr-5 border-b{% if forloop.first and index == 1 %} border-t{% endif %}">
+                    {% if is_link %}
+                      <p class="flex-1 pt-3.5 pb-3.5 flex items-center disable-effect{% if request.path == link %} effect-inline active{% endif %}"
+                        :class="active && 'effect-inline'">
+                        <span class="p-break-words">{{ block.settings.heading | escape }}</span>
+                      </p>
+                      <span
+                        class="icon-caret-mobile h-11 w-8 pt-4 pl-2.5 pr-2 block -rotate-90{%- if request.path == link %} text-[rgba(var(--colors-text-link))]{% endif %}"
+                        :class="active && 'text-[rgba(var(--colors-text-link))]'"
+                      >{% render 'icon-alls', icon: 'icon-caret' %}</span>
+                    {% else %}
+                      {% if link %}<a href="{{ link }}"{% if block.settings.open_new_window %} target="_blank"{% endif %}{% else %}<p{% endif %} class="flex-1 pt-3.5 pb-3.5 flex items-center disable-effect{% if request.path == link %} effect-inline active{% endif %}">
+                        <span class="p-break-words">{{ block.settings.heading | escape }}</span>
+                      {% if link %}</a>{% else %}</p>{% endif %}
+                    {% endif %}
+                  </div>
+                  {%- if is_link -%}
+                    <div
+                      class="menu-drawer top-0 absolute background-header w-full h-full z-20 translate-x-full invisible"
+                      :class="$store.xMobileNav.currentMenuLinks.includes('{{ index }}') && 'menu-opening'"
+                      :class="$store.xMobileNav.currentMenuLinks.length == 1 && 'visible'">
+                      <ul 
+                        id="menu-level-1"
+                        class="top-0 background-header w-full h-full z-20 overflow-auto scrollbar-body" 
+                        >
+                        <div class="flex items-center text-right justify-between ml-5 mr-5 border-y">
+                          <span class="h-11 w-8 pt-4 pr-2.5 pl-2 mr-4 block rotate-90 border-t border-solid" @click="$store.xMobileNav.removeActiveLink('{{ index }}');">{% render 'icon-alls', icon: 'icon-caret' %}</span>
+                          {% if link %}<a href="{{ link.url }}"{% if block.settings.open_new_window %} target="_blank"{% endif %}{% else %}<p{% endif %} class="pt-4 pb-4 flex-1 font-semibold disable-effect{% if link.current or link.child_active %} active{% endif %}">
+                            <span class="p-break-words">{{ block.settings.heading | escape }}</span>
+                          {% if link %}</a>{% else %}</p>{% endif %}
+                        </div>
+                        {%- render 'mobile-main-menu',
+                          links: block.settings.menu.links,
+                          link: link,
+                          start_level: 1,
+                          start_id: index
+                        -%}
+                      </ul>
+                    </div>
+                  {%- endif -%}
+                </li>
+              {%- endif -%}
+            {%- when 'cart' -%}
+              <li class="block-mobile-navigation pl-5 pr-5" {{ block.shopify_attributes }}>
+                <a
+                  href="{{ routes.cart_url }}"
+                  class="flex pt-5 pb-5 items-center relative border-b disable-effect{% if request.path == routes.cart_url %} effect-inline{% endif %}"
+                  data-no-instant
+                >
+                  <span class="w-6 opacity-70" @click="$store.xMiniCart.openCart()"> 
+                    {% render 'icon-cart-all', icon: settings.cart_icon %}
+                  </span>
+                  <div id="mobile-cart-icon-bubble" class="count_item absolute top-2 left-3">
+                    <div class="bg-[rgba(var(--colors-cart))] text-[rgba(var(--colors-cart-text))] font-medium h-5 w-5 ml-1 rounded-full text-[10px]{% if cart == empty %} hidden{% endif %}">
+                      {%- if cart.item_count < 100 -%}
+                        <span class="h-full flex items-center justify-center" aria-hidden="true">{{ cart.item_count }}</span>
+                      {%- else -%}
+                        <span class="h-full flex items-center justify-center">99+</span> 
+                      {%- endif -%}
+                    </div>
+                  </div>
+                  <span class="ml-4">{{ 'sections.mobile-navigation.my_cart' | t }}</span>
+                </a>
+              </li>
+            {%- when 'account' -%}
+              {%- if shop.customer_accounts_enabled -%}
+                <li class="block-mobile-navigation pl-5 pr-5" {{ block.shopify_attributes }}>
+                  {%- liquid 
+                      if customer and request.path == routes.account_url
+                        assign active = true
+                      endif  
+                      if routes.account_login_url == request.path
+                        assign active = true
+                      endif 
+                  -%}
+                  <a href="{%- if customer -%}{{ routes.account_url }}{%- else -%}{{ routes.account_login_url }}{%- endif -%}" 
+                    class="pt-3.5 pb-3.5 flex items-center border-b disable-effect{% if active %} effect-inline{% endif %}"
+                    data-no-instant
+                    aria-label="{{ 'customer.log_in' | t }}"
+                  >
+                    <span class="w-5 mr-4">
+                      {% render 'icon-alls', icon: 'icon-account' %}
+                    </span>
+                    {%- liquid
+                      if customer
+                        echo 'customer.account_fallback' | t
+                      else
+                        echo 'customer.log_in' | t
+                      endif
+                    -%}
+                  </a>
+                </li>
+              {%- endif -%}
+            {%- when 'image' -%}
+              {%- if block.settings.image != blank -%}
+                <li class="block-mobile-navigation pl-5 pr-5" {{ block.shopify_attributes }}>
+                  <div class="pt-4 pb-4 items-center border-b">
+                    {%- if block.settings.image_link != blank -%}
+                      <a href="{{ block.settings.image_link }}"{% if block.settings.open_new_window %} target="_blank"{% endif %} class="disable-effect">
+                    {%- endif -%}
+                      {{ block.settings.image | image_url: width: block.settings.image.witdh | image_tag: 
+                        widths: '300, 540, 767',
+                        loading: 'lazy',
+                        sizes: '(min-width: 768px) calc(100vw - 100px), 40vw',
+                        alt: block.settings.image.src.alt,
+                        class: 'h-full w-full'
+                      }}
+                    {%- if block.settings.image_link != blank -%}
+                      </a>
+                    {%- endif -%}
+                  </div>
+                </li>
+              {%- endif -%}
+            {%- when 'social' -%}
+              <li class="block-mobile-navigation pl-5 pr-5" {{ block.shopify_attributes }}>
+                <div class="pt-2 pb-2 pl-0.5 pr-0.5 flex items-center justify-center opacity-70 border-b">
+                  {% render 'toolbar', mobile: true, show_social_icons: true %}
+                </div>
+              </li>
+            {%- when 'text' -%}
+              {%- if block.settings.text != blank -%}
+                <li class="block-mobile-navigation" {{ block.shopify_attributes }}>
+                  <div class="pt-3.5 pb-3.5 ml-5 mr-5 border-b rte p-break-words text-color rte">
+                    {{ block.settings.text }}
+                  </div>
+                </li>
+              {%- endif -%}
+          {%- endcase -%}
+        {%- endfor -%}
+        {% comment %}theme-check-enable LiquidTag{% endcomment %}
+      </ul>
+    </div>
+    {%- if show_language -%}
+      <div class="pt-1.5 pb-1.5 pl-5 pr-5 lg:flex lg:items-center z-50 background-header justify-center lg:justify-end bottom-0 left-0 max-w-sm border-t">
+        {%- render 'toolbar', 
+          mobile: true, 
+          show_currency_selector: section.settings.show_currency_selector, 
+          show_language_selector: section.settings.show_language_selector
+        -%}
+      </div>
+    {%- endif -%}
+  </div>
+</div>
+{% schema %}
+{
+  "name": "t:sections.mobile-navigation.name",
+  "class": "section-mobile-navigation",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:sections.mobile-navigation.settings.description.content"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "default": "main-menu",
+      "label": "t:sections.mobile-navigation.settings.menu.label",
+      "info": "t:sections.mobile-navigation.settings.menu.info"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_language_selector",
+      "default": true,
+      "label": "t:sections.header.settings.show_language_selector.label"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_currency_selector",
+      "default": true,
+      "label": "t:sections.header.settings.show_currency_selector.label"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "default": "#FFFFFF",
+      "label": "t:sections.mobile-navigation.settings.background_color.label"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "default": "#000000",
+      "label": "t:sections.mobile-navigation.settings.text_color.label"
+    },
+    {
+      "type": "color",
+      "id": "divider_color",
+      "default": "#F2F2F2",
+      "label": "t:sections.mobile-navigation.settings.divider_color.label"
+    },
+    {
+      "type": "color",
+      "id": "background_color_dark",
+      "default": "#202020",
+      "label": "t:sections.mobile-navigation.settings.background_color_dark.label"
+    },
+    {
+      "type": "color",
+      "id": "text_color_dark",
+      "default": "#FFFFFF",
+      "label": "t:sections.mobile-navigation.settings.text_color_dark.label"
+    },
+    {
+      "type": "color",
+      "id": "divider_color_dark",
+      "default": "#313131",
+      "label": "t:sections.mobile-navigation.settings.divider_color_dark.label"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "menu",
+      "name": "t:sections.mobile-navigation.blocks.menu.name",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.mobile-navigation.blocks.menu.settings.menu_item.label"
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "t:sections.mobile-navigation.blocks.menu.settings.menu.label",
+          "info": "t:sections.mobile-navigation.blocks.menu.settings.menu.info"
+        },
+        {
+          "type": "url",
+          "id": "menu_item_link",
+          "label": "t:sections.mobile-navigation.blocks.menu.settings.menu_item_link.label"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_new_window",
+          "default": false,
+          "label": "t:sections.all.open_new_window.label"
+        }
+      ]
+    },
+    {
+      "type": "cart",
+      "limit": 1,
+      "name": "t:sections.mobile-navigation.blocks.cart.name"
+    },
+    {
+      "type": "account",
+      "limit": 1,
+      "name": "t:sections.mobile-navigation.blocks.account.name"
+    },
+    {
+      "type": "image",
+      "limit": 1,
+      "name": "t:sections.mobile-navigation.blocks.image.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.mobile-navigation.blocks.image.name"
+        },
+        {
+          "type": "url",
+          "id": "image_link",
+          "label": "t:sections.mobile-navigation.blocks.image_link.name"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_new_window",
+          "default": false,
+          "label": "t:sections.all.open_new_window.label"
+        }
+      ]
+    },
+    {
+      "type": "social",
+      "limit": 1,
+      "name": "t:sections.mobile-navigation.blocks.social.name"
+    },
+    {
+      "type": "text",
+      "limit": 1,
+      "name": "t:sections.mobile-navigation.blocks.text.name",
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "t:sections.mobile-navigation.blocks.text.name"
+        }
+      ]
+    }
+  ],
+  "default": {
+    "blocks": [
+      {
+        "type": "cart"
+      },
+      {
+        "type": "account"
+      },
+      {
+        "type": "image"
+      },
+      {
+        "type": "social"
+      },
+      {
+        "type": "text"
+      }
+    ]
+  }
+}
+{% endschema %}

@@ -1,0 +1,236 @@
+<div class="page-width mx-auto grid{% if settings.enable_estimate_shipping %} md:grid-cols-3 md:gap-6 lg:gap-14{% endif %} pt-[{{ section.settings.padding_top_mobile }}px] md:pt-[{{ section.settings.padding_top }}px] pb-[{{ section.settings.padding_bottom_mobile }}px] md:pb-[{{ section.settings.padding_bottom }}px]">
+    {% if settings.enable_estimate_shipping %}
+      <div class="w-full pb-6 md:pb-0">
+        <div class="hidden md:block">
+          {% render 'estimate-shipping-rate' %}
+        </div>
+        <div class="md:hidden border-y border-solid">
+          <div class="pt-3 pb-3 relative" @click="$store.xPopupShipping.open = !$store.xPopupShipping.open" class="h4 text-medium">
+            <p class="h4 text-medium">{{ 'shipping.estimate' | t }}</p>
+            <span class="w-3 duration-200 block absolute right-1 opacity-70 top-1/2 -translate-y-1/2"
+              :class="$store.xPopupShipping.open && 'rotate-180'"
+            > 
+            {% render 'icon-alls', icon: 'icon-caret' %}
+            </span>
+          </div>
+          <div x-show="$store.xPopupShipping.open" x-cloak x-collapse>
+            {% render 'estimate-shipping-rate', main_cart_mobile: true %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <div id="main-cart-footer" class="{% if settings.enable_estimate_shipping %} md:col-span-2{% endif %} block md:flex justify-end{% if settings.enable_estimate_shipping %} lg:gap-x-14{% endif %}">
+      {%- if cart != empty -%}
+        {%- if settings.show_cart_note or settings.show_cart_custom_field -%}
+          <div class="w-full md:w-1/2 md:pr-2.5 lg:pr-0">
+            {% comment %} Cart note {% endcomment %}
+            {%- if settings.show_cart_note -%}
+              <textarea x-ref="cart_field_note_data" hidden>{{- cart.note -}}</textarea>
+              <p for="x-cart-note" class="block h4 text-medium md:mb-5">{{ 'sections.cart.note' | t }}</p>
+              <textarea
+                id="x-cart-note"
+                class="w-full bg-transparent border pl-4 pr-4 pt-4 pb-4 mt-2 outline-none focus:outline-none focus:border-current{% if settings.edges_type == 'rounded_corners' %} !rounded-md{% endif %}"
+                name="note"
+                form="cart"
+                rows="4"
+                cols="60"
+                aria-label="{{ 'sections.cart.note' | t }}"
+                @change="$store.xCartHelper.updateCart({ note: $el.value})"
+              >{{ cart.note }}</textarea>
+            {%- endif -%}
+
+            {% comment %} Cart custom field {% endcomment %}
+            {%- if settings.show_cart_custom_field and settings.cart_custom_field_label != blank -%}
+              {%- capture cartFieldsData -%}
+                {
+                  "custom_field_label": "{{ settings.cart_custom_field_label }}",
+                  "custom_field_required": {{ settings.cart_custom_field_required | default: false }},
+                  "custom_field_pattern": "{{ settings.cart_custom_field_pattern }}"
+                }
+              {%- endcapture %}
+              <div
+                x-data="xCartFields"
+                x-intersect="loadData"
+                x-cart-fields-data='{{ cartFieldsData | escape }}'
+              >
+                <p for="cart-custom-field" class="block h4 pt-4 text-medium md:mb-5">{{ settings.cart_custom_field_label }}{% if settings.cart_custom_field_required %}<span class="pl-1" aria-hidden="true">*</span>{% endif %}</p>
+                <input
+                  id="x-cart-custom-field"
+                  type="text"
+                  {% if settings.cart_custom_field_required %}
+                    :class="custom_field_error && 'border-[rgba(var(--color-error))] shadow-[0_0_0_1px_rgba(var(--color-error))]'"
+                  {% endif %}
+                  class="w-full pl-4 pr-4 pt-4 pb-4 mt-2 border border-solid bg-[rgba(var(--background-color),1)] focus-within:outline-none placeholder:text-current placeholder:opacity-60{% if settings.edges_type == 'rounded_corners' %} !rounded-md{% endif %}"
+                  placeholder="{{ settings.cart_custom_field_label }}"
+                  x-model="custom_field"
+                />
+                {% if settings.cart_custom_field_required %}
+                  <p x-cloak x-show="custom_field_error" class="text-[rgba(var(--color-error))] mt-2">{{ 'sections.cart.required_cart_note' | t }} {{ settings.cart_custom_field_label }}</p>
+                {% endif %}
+              </div>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+        <div class="w-full md:w-1/2 md:text-right{% if settings.show_cart_note %} md:pl-2.5 lg:pl-0{% endif %}{% if settings.enable_estimate_shipping %} lg:pl-16{% endif %}">
+          {% for block in section.blocks %}
+            {%- case block.type -%}
+              {%- when '@app' -%}
+                {% render block %}
+              {%- when 'subtotal' -%}
+                <div id="js-contents" class="mt-6 md:mt-0" {{ block.shopify_attributes }}>
+                  <div>
+                    <p class="h4 text-medium md:mb-5">{{ 'sections.cart.subtotal' | t }}</p>
+                    <p class="h4 text-medium mt-3 lg:mt-4 mb-2 lg:mb-1.5">{{ cart.total_price | money_with_currency }}</p>
+                  </div>
+                  {%- if cart.cart_level_discount_applications.size > 0 -%}
+                    <div class="mt-2">
+                      <ul>
+                        {%- for discount in cart.cart_level_discount_applications -%}
+                          <li class="flex relative md:justify-end items-center text-small">
+                            <span class="w-4 top-1/2">{%- render 'icon-alls', icon: 'icon-discount' -%}</span>
+                            <span class="pl-1 pr-1 p-break-words">{{ discount.title }}</span>
+                            (-{% if settings.currency_code_enable %}
+                                {{ discount.total_allocated_amount | money_with_currency }}
+                              {% else %}
+                                {{ discount.total_allocated_amount | money }}
+                              {% endif %})
+                          </li>
+                        {%- endfor -%}
+                      </ul>
+                    </div>
+                  {%- endif -%}
+                  <small>
+                    {%- if cart.taxes_included and shop.shipping_policy.body != blank -%}
+                      {{ 'sections.cart.taxes_included_and_shipping_policy_html' | t: link: shop.shipping_policy.url }}
+                    {%- elsif cart.taxes_included -%}
+                      {{ 'sections.cart.taxes_included_but_shipping_at_checkout' | t }}
+                    {%- elsif shop.shipping_policy.body != blank -%}
+                      {{ 'sections.cart.taxes_and_shipping_policy_at_checkout_html' | t: link: shop.shipping_policy.url }}
+                    {%- else -%}
+                      {{ 'sections.cart.taxes_and_shipping_at_checkout' | t }}
+                    {%- endif -%}
+                  </small>
+                </div>
+              {%- else -%}
+                {%- if settings.cart_enable_terms_and_conditions -%}
+                  <div x-data="xCartTerm" class="flex relative pb-5 items-center mb-2 mt-4 md:justify-end eurus">
+                    <input
+                      id="x-cart-agree" 
+                      class="checkbox checkbox-checked mr-2 h-4 w-4 border checked:border-[rgba(var(--colors-text-link))] checked:bg-[rgba(var(--colors-text-link))] relative cursor-pointer{% if settings.edges_type == 'rounded_corners' %} rounded{% else %} rounded-none{% endif %}" 
+                      type="checkbox"
+                      x-model="checked"
+                    />
+                    <label for="x-cart-agree" class="cursor-pointer">
+                      {% if settings.cart_terms_and_conditions_page != blank %}
+                        {{ 'sections.cart.cart_enable_terms_and_conditions_html' | t: url: settings.cart_terms_and_conditions_page.url }}
+                      {% else %}
+                        {{ 'sections.cart.cart_enable_terms_and_conditions' | t }}
+                      {% endif %}
+                    </label>
+                    <p class="clear-left text-[rgba(var(--color-error))] mt-2 text-normal absolute bottom-0" x-show="!checked" x-cloak>{{ 'general.cart.terms_confirm' | t }}</p>
+                  </div>
+                {%- else -%}
+                  <input id="x-cart-agree" class="hidden" type="checkbox" checked="checked" />
+                {%- endif -%}
+                <div {{ block.shopify_attributes }}>
+                  <button
+                    id="checkout-submit" 
+                    class="button button-solid w-full justify-center pl-6 pr-6 pt-3.5 pb-3.5 mt-4 md:mb-1.5 cursor-pointer leading-normal{% unless settings.enable_estimate_shipping %} md:w-1/2{% endunless %}" 
+                    type="submit" 
+                    name="checkout"
+                    form="cart"
+                    @click="$store.xCartHelper.goToCheckout($event)"
+                    {% if cart == empty %}disabled{% endif %}
+                  >
+                    {{ 'sections.cart.checkout' | t }}
+                  </button>
+                </div>
+                {%- if additional_checkout_buttons -%}
+                  <div class="left{% if settings.enable_estimate_shipping %} button-full{% endif %}">
+                    {{ content_for_additional_checkout_buttons }}
+                  </div>
+                {%- endif -%}
+            {%- endcase -%}
+          {% endfor %}
+          <div id="cart-errors"></div>
+        </div>
+      {%- endif -%}
+    </div>
+</div>
+{%- if settings.show_cart_custom_field and settings.cart_custom_field_label != blank -%}
+  <script src="{{ 'cart-fields.js' | asset_url }}" defer></script>
+{%- endif -%}
+{%- if settings.cart_enable_terms_and_conditions -%}
+  <script src="{{ 'cart-term.js' | asset_url }}" defer></script>
+{%- endif -%}
+{% schema %}
+{
+  "name": "t:sections.main-cart-footer.name",
+  "class": "cart__footer-wrapper",
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "unit": "px",
+      "step": 4,
+      "default": 40,
+      "label": "t:sections.all.padding.padding_top"
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "unit": "px",
+      "step": 4,
+      "default": 84,
+      "label": "t:sections.all.padding.padding_bottom"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_layout_mobile"
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 100,
+      "unit": "px",
+      "step": 4,
+      "default": 40,
+      "label": "t:sections.all.padding.padding_top"
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 100,
+      "unit": "px",
+      "step": 4,
+      "default": 84,
+      "label": "t:sections.all.padding.padding_bottom"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "subtotal",
+      "name": "t:sections.main-cart-footer.blocks.subtotal.name",
+      "limit": 1
+    },
+    {
+      "type": "buttons",
+      "name": "t:sections.main-cart-footer.blocks.buttons.name",
+      "limit": 1
+    },
+    {
+      "type": "@app"
+    }
+  ]
+}
+{% endschema %}
