@@ -26,8 +26,24 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
           }
         },
         loadData(el) {
-          if (window.innerWidth > 767) {
+          if (window.innerWidth >= 1024) {
             el.style.marginTop = document.querySelector(".page__body").offsetTop + 30 +"px";
+          }
+          else {
+            const getElementDocumentOffset = (element) => {
+              const rect = element.getBoundingClientRect()
+              const scrollTop = window.scrollY
+              return rect.top + scrollTop
+            }
+            const pageTitle = document.querySelector('.page__title')
+            const pageBody =  document.querySelector('.page__body')
+            const pageContainer = document.querySelector('.page__container')
+            const pageTitleHeight = window.getComputedStyle(pageTitle).height
+            const outlineHeight = window.getComputedStyle(el).height
+            const outlinePos = getElementDocumentOffset(pageTitle) - getElementDocumentOffset(pageContainer) + Number(pageTitleHeight.slice(0, pageTitleHeight.length-2))
+            el.style.top = `calc(${outlinePos}px + 1rem)`
+            el.style.padding = '0px 20px'
+            pageBody.style.marginTop = `calc(${Number(outlineHeight.slice(0, outlineHeight.length-2))}px + 2rem)`
           }
           const heading2 = document.querySelectorAll('article h2, article h3');
           if(heading2.length > 1 ) {
