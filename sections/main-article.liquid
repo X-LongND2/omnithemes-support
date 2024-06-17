@@ -39,7 +39,7 @@
     <div class="article--{{ section.id }}{% if section.settings.menu_heading == blank or section.settings.menu_left == blank %} page-width{% endif %} ml-auto mr-auto pr-0 pl-0 flex flex-wrap relative">
       {%- if section.settings.menu_left != blank -%}
         <div class="menu-article-left lg:w-1/5 order-1">
-          <div class="md:sticky pl-3 pr-3 pb-3.5 top-28">
+          <div class="md:sticky pl-3 pr-3 pb-3.5 pt-3.5 top-28">
             {%- if section.settings.menu_heading_left != blank -%}
               <div class="heading--{{ section.id }} pb-3 pt-3 lg:pt-0 h2 pl-4 pr-4">{{ section.settings.menu_heading_left }}</div>
             {%- endif -%}
