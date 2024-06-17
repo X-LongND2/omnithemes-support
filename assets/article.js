@@ -30,6 +30,7 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
             el.style.marginTop = document.querySelector(".page__body").offsetTop + 30 +"px";
           }
           else {
+            el.style.display = 'block'
             const getElementDocumentOffset = (element) => {
               const rect = element.getBoundingClientRect()
               const scrollTop = window.scrollY
@@ -42,6 +43,9 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
             const outlineHeight = window.getComputedStyle(el).height
             const outlinePos = getElementDocumentOffset(pageTitle) - getElementDocumentOffset(pageContainer) + Number(pageTitleHeight.slice(0, pageTitleHeight.length-2))
             el.style.top = `calc(${outlinePos}px + 1rem)`
+            if(window.innerWidth >= 768) {
+              el.style.marginLeft = '20px'
+            }
             el.style.padding = '0px 20px'
             pageBody.style.marginTop = `calc(${Number(outlineHeight.slice(0, outlineHeight.length-2))}px + 2rem)`
           }
