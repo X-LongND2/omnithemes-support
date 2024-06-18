@@ -193,7 +193,36 @@
               {% endif %}
             {%- endif -%}
           </form>
-        </div>
+
+          <div x-data="{ searchFilter: 'eurus' }" class="eurus flex justify-center gap-12 py-3">
+            <div x-on:click="searchFilter = 'eurus'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
+              <input
+                type="radio"
+                value="eurus"
+                style="background-color: white !important"
+                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"           
+                x-model="searchFilter"
+              >
+              <label for="" class="flex-1 cursor-pointer bg-transparent">
+                Eurus
+              </label>
+              <br>
+            </div>
+
+            <div x-on:click="searchFilter = 'ironworks'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
+              <input
+                type="radio"
+                value="ironworks"
+                style="background-color: white !important"
+                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"      
+                x-model="searchFilter"
+              >
+              <label for="" class="flex-1 cursor-pointer bg-transparent">
+                Ironworks
+              </label>
+              <br>
+            </div>
+          </div>
   {%- endif -%}
       {%- for block in section.blocks -%}
         {%- case block.type -%}

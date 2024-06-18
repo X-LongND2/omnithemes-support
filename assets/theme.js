@@ -410,6 +410,12 @@ requestAnimationFrame(() => {
         };
       },
       getSearchResult(query) {
+        let searchFilter = ''
+        document.querySelectorAll('input[name="searchFilter"]').forEach(element => {
+          if(element.checked) {
+            searchFilter = element.value
+          }
+        })
         this.openResults = true;
         const limit = window.innerWidth > 767 ? desktopMaximunResults : mobileMaximunResults;
         let q = this.productTypeSelected != productTypeSelected ? `${this.productTypeSelected} AND ${query}` : query;
@@ -446,7 +452,6 @@ requestAnimationFrame(() => {
         }
       },
       focusForm() {
-        console.log(this.$el.value)
         if (this.$el.value != '') {
           this.showSuggest = false;
         } else {
