@@ -140,7 +140,7 @@
               </h2>
               <div class="predictive-result-item pb-2.5 pl-6 pr-6 lg:pl-10 lg:pr-10 gap-2">
                 {%- for article in predictive_search.resources.articles -%} 
-                  <div class="block py-2">
+                  <div class="article-item {{ article.template_suffix }} block py-2">
                     <a href="{{ article.url }}" class="flex relative disable-effect h-full">
                       <div class="w-24 relative">
                         <div class="relative overflow-hidden w-full float-left before:h-0 before:block before:pb-[75.0%]{% if settings.edges_type == 'rounded_corners' %} rounded-md{% endif %}">

@@ -422,8 +422,8 @@ requestAnimationFrame(() => {
 
         const queryKey = q.replace(" ", "-").toLowerCase() + '_' + limit;
 
-        if (this.cachedResults[queryKey]) {
-          this.result = this.cachedResults[queryKey];
+        if (this.cachedResults[queryKey] && this.cachedResults[queryKey][searchFilter]) {
+          this.result = this.cachedResults[queryKey][searchFilter];
           return;
         }
 
@@ -436,8 +436,15 @@ requestAnimationFrame(() => {
           .then((response) => {
             const parser = new DOMParser();
             const text = parser.parseFromString(response, 'text/html');
-            this.result = text.querySelector("#shopify-section-predictive-search").innerHTML;
-            this.cachedResults[queryKey] = this.result;
+            const articleItems = text.getElementsByClassName('article-item')
+            for(let i=0; i<articleItems.length; i++) {
+              if(!articleItems[i].className.includes(searchFilter)) {
+                articleItems[i].style.display = 'none'
+              }
+            }
+            this.result = text.querySelector("#shopify-section-predictive-search").innerHTML;    
+            this.cachedResults[queryKey] = {};
+            this.cachedResults[queryKey][searchFilter] = this.result
           })
           .catch((error) => {
             throw error;
