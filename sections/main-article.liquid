@@ -181,7 +181,7 @@
       {%- endif -%}
       {%- if section.settings.menu_heading != blank -%}
         <div
-          class="menu-article lg:w-1/5 md:mb-20{% if section.settings.menu_left != blank %} absolute lg:relative hidden lg:block order-3{%- endif -%}"
+          class="menu-article lg:w-1/5 lg:mb-20{% if section.settings.menu_left != blank %} absolute lg:relative hidden lg:block order-3{%- endif -%}"
           x-data="xArticle"
           x-init="loadData($el)"
         >
