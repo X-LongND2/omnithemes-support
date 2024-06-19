@@ -442,9 +442,12 @@ requestAnimationFrame(() => {
                 articleItems[i].style.display = 'none'
               }
             }
-            this.result = text.querySelector("#shopify-section-predictive-search").innerHTML;    
-            this.cachedResults[queryKey] = {};
-            this.cachedResults[queryKey][searchFilter] = this.result
+            this.result = text.querySelector("#shopify-section-predictive-search").innerHTML;
+            if(!this.cachedResults[queryKey]) {
+              this.cachedResults[queryKey] = {};
+              this.cachedResults[queryKey][searchFilter] = this.result
+            }
+            else this.cachedResults[queryKey][searchFilter] = this.result
           })
           .catch((error) => {
             throw error;
