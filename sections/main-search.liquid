@@ -73,15 +73,15 @@
           <input type="hidden" name="options[prefix]" value="last">
           <button
             onclick="
-            {% if search.types.first == 'article' %}
-              let searchFilter = '';
-              document.querySelectorAll(`input[name='searchFilter']`).forEach(element => {
-                if(element.checked) {
-                  searchFilter = element.value
-                }
-              });
-              localStorage.setItem('searchFilter', searchFilter)
-            {% endif %}
+              {% if search.types.first == 'article' %}
+                let searchFilter = '';
+                document.querySelectorAll(`input[name='searchFilter']`).forEach(element => {
+                  if(element.checked) {
+                    searchFilter = element.value
+                  }
+                });
+                localStorage.setItem('searchFilter', searchFilter)
+              {% endif %}
             "
             class="absolute none_border bg-none w-5 h-5 right-7 top-1/2 -translate-y-1/2 opacity-60 bg-transparent dark:bg-transparent text-current"
             aria-label="{{ 'general.search.search' | t }}"
@@ -140,6 +140,9 @@
       {%- if search.results_count == 0 and search.filters == empty -%}
         <p class="text-center" role="status">{{ 'templates.search.no_results' | t: terms: search.terms }}</p>
       {%- endif -%}
+      <p class="search-no-result text-center hidden" role="status">
+        {{ 'templates.search.no_results' | t: terms: search.terms }}
+      </p>
     {%- endif -%}
   </div>
   {%- if search.performed -%}
@@ -201,26 +204,6 @@
                 class="grid gap-4 md:gap-7 grid-cols-{{ section.settings.columns_mobile_grid }} md:grid-cols-2 lg:grid-cols-{{ section.settings.columns_desktop_grid }} list-layout:grid-cols-1"
                 role="list"
               >
-                <script>
-                  let totalResults = 0;
-                  {%- if search.types.first == 'article' -%}
-                    {%- for item in search.results -%}
-                      {%- if item.template_suffix == 'user-guide-page' -%}
-                        if(new URLSearchParams(window.location.search).get('filter') === 'user-guide-page') {
-                          totalResults+=1;
-                        }
-                      {%- endif -%}
-                      {%- if item.template_suffix == 'user-guide-ironworks' -%}
-                        if(new URLSearchParams(window.location.search).get('filter') === 'user-guide-ironworks') {
-                          totalResults+=1;
-                        }
-                      {%- endif -%}
-                    {%- endfor -%}          
-                  {%- endif -%}
-                  const head = document.title.slice(0, 8);
-                  const tail = document.title.slice(document.title.indexOf('l')-5, document.title.length);
-                  document.title = head + totalResults.toString() + tail;
-                </script>
                 {%- for item in search.results -%}
                   {%- if forloop.index < 3 -%}
                     {%- assign loading = 'eager' -%}
@@ -245,18 +228,6 @@
                         %}
                         <script src="{{ 'preview-color-swatches.js' | asset_url }}" defer></script>
                       {%- when 'article' -%}
-                        <script>
-                          {%- if item.template_suffix == 'user-guide-page' -%}
-                            if(new URLSearchParams(window.location.search).get('filter') !== 'user-guide-page') {
-                              document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none'
-                            }
-                          {%- endif -%}
-                          {%- if item.template_suffix == 'user-guide-ironworks' -%}
-                            if(new URLSearchParams(window.location.search).get('filter') !== 'user-guide-ironworks') {
-                              document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none'
-                            }
-                          {%- endif -%}
-                        </script>
                         <div class="h-full w-full">
                           {%
                             render 'article-card',
@@ -293,6 +264,36 @@
                     {%- endcase -%}
                   </div>
                 {%- endfor -%}
+                <script>
+                  let totalResults = 0;
+                  {%- if search.types.first == 'article' -%}
+                    {%- for item in search.results -%}
+                      {%- if item.template_suffix == 'user-guide-page' -%}
+                        if(new URLSearchParams(window.location.search).get('filter') === 'user-guide-page') {
+                          totalResults+=1;
+                        } else {
+                          document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none';
+                        }
+                      {%- endif -%}
+                      {%- if item.template_suffix == 'user-guide-ironworks' -%}
+                        if(new URLSearchParams(window.location.search).get('filter') === 'user-guide-ironworks') {
+                          totalResults+=1;
+                        } else {
+                          document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none';
+                        }
+                      {%- endif -%}
+                      {%- if item.template_suffix != 'user-guide-page' and item.template_suffix != 'user-guide-ironworks'-%}
+                        document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none';
+                      {%- endif -%}
+                    {%- endfor -%}
+                  {%- endif -%}
+                  const head = document.title.slice(0, 8);
+                  const tail = document.title.slice(document.title.indexOf('l')-5, document.title.length);
+                  document.title = head + totalResults.toString() + tail;
+                  if(totalResults === 0) {
+                    document.querySelector('.search-no-result').style.display = 'block';
+                  }
+                </script>
               </div>
               {%- if paginate.pages > 1 and search.results.first.object_type != 'article' -%}
                 <div class="flex justify-center mt-3 md:mt-9 mb-7 border-t pt-7">
