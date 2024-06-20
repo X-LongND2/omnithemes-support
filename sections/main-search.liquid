@@ -73,7 +73,7 @@
           <input type="hidden" name="options[prefix]" value="last">
           <button
             onclick="
-            {% if search.results.first.object_type == 'article' %}
+            {% if search.types.first == 'article' %}
               let searchFilter = '';
               document.querySelectorAll(`input[name='searchFilter']`).forEach(element => {
                 if(element.checked) {
@@ -201,6 +201,26 @@
                 class="grid gap-4 md:gap-7 grid-cols-{{ section.settings.columns_mobile_grid }} md:grid-cols-2 lg:grid-cols-{{ section.settings.columns_desktop_grid }} list-layout:grid-cols-1"
                 role="list"
               >
+                <script>
+                  let totalResults = 0;
+                  {%- if search.types.first == 'article' -%}
+                    {%- for item in search.results -%}
+                      {%- if item.template_suffix == 'user-guide-page' -%}
+                        if(new URLSearchParams(window.location.search).get('filter') === 'user-guide-page') {
+                          totalResults+=1;
+                        }
+                      {%- endif -%}
+                      {%- if item.template_suffix == 'user-guide-ironworks' -%}
+                        if(new URLSearchParams(window.location.search).get('filter') === 'user-guide-ironworks') {
+                          totalResults+=1;
+                        }
+                      {%- endif -%}
+                    {%- endfor -%}          
+                  {%- endif -%}
+                  const head = document.title.slice(0, 8);
+                  const tail = document.title.slice(document.title.indexOf('l')-5, document.title.length);
+                  document.title = head + totalResults.toString() + tail;
+                </script>
                 {%- for item in search.results -%}
                   {%- if forloop.index < 3 -%}
                     {%- assign loading = 'eager' -%}
