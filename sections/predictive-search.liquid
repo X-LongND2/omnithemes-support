@@ -181,8 +181,16 @@
     </div>
   </div>
   {% if settings.search_show_view_more and results_size > 0 %}
-    <button id='search-view-all' class="background-header shadow-[0_0_6px_-4px_rgba(var(--colors-text))] pt-5 pb-5 pl-6 pr-6 lg:pl-9 lg:pr-9 border-solid rounded-none inline-block cursor-pointer hover-text-link text-center w-full text-current border-t">
-      {{ 'templates.search.view_all' | t }} hihi
+    <button onclick="
+      let searchFilter = '';
+      document.querySelectorAll(`input[name='searchFilter']`).forEach(element => {
+        if(element.checked) {
+          searchFilter = element.value
+        }
+      });
+      localStorage.setItem('searchFilter', searchFilter)
+      " id='search-view-all' class="background-header shadow-[0_0_6px_-4px_rgba(var(--colors-text))] pt-5 pb-5 pl-6 pr-6 lg:pl-9 lg:pr-9 border-solid rounded-none inline-block cursor-pointer hover-text-link text-center w-full text-current border-t">
+      {{ 'templates.search.view_all' | t }}
     </button>
   {%- endif -%}
 </div>

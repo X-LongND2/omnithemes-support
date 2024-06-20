@@ -212,6 +212,15 @@
             <input type="hidden" name="type" value="article">
             <input type="hidden" name="options[prefix]" value="last">
             <button
+              onclick="
+                let searchFilter = '';
+                document.querySelectorAll(`input[name='searchFilter']`).forEach(element => {
+                  if(element.checked) {
+                    searchFilter = element.value
+                  }
+                });
+                localStorage.setItem('searchFilter', searchFilter)
+              "
               class="absolute none_border w-7 h-7 pt-1 pb-1 pl-1 pr-1 right-7 lg:right-2 top-1/2 -translate-y-1/2 opacity-60 bg-none text-current"
               aria-label="{{ 'general.search.search' | t }}"
             >
@@ -263,26 +272,25 @@
                 type="radio"
                 value="user-guide-page"
                 style="background-color: white !important"
-                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"           
+                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
                 x-model="searchFilter"
               >
-              <label for="" class="flex-1 cursor-pointer bg-transparent">
-                Eurus
-              </label>
+              <label for="" class="flex-1 cursor-pointer bg-transparent"> Eurus </label>
               <br>
             </div>
 
-            <div x-on:click="searchFilter = 'user-guide-ironworks'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
+            <div
+              x-on:click="searchFilter = 'user-guide-ironworks'"
+              class="flex items-center mt-1.5 mb-1.5 cursor-pointer"
+            >
               <input
                 type="radio"
                 value="user-guide-ironworks"
                 style="background-color: white !important"
-                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"      
+                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
                 x-model="searchFilter"
               >
-              <label for="" class="flex-1 cursor-pointer bg-transparent">
-                Ironworks
-              </label>
+              <label for="" class="flex-1 cursor-pointer bg-transparent"> Ironworks </label>
               <br>
             </div>
           </div>

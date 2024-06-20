@@ -493,7 +493,7 @@ requestAnimationFrame(() => {
         }
         else {
           document.addEventListener('click', (event) => {
-            if(!document.getElementById('search-result').querySelector('.background-header').contains(event.target) &&
+            if(!document.getElementById('search-result').querySelector('.background-header')?.contains(event.target) &&
             !document.getElementById('search-in-modal').contains(event.target)) {
               this.result = "";
               document.getElementById('search-result').style.display = 'none'

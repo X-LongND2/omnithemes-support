@@ -6,7 +6,7 @@
   assign disable_quickview = true
   if section.settings.show_quickview
     assign disable_quickview = false
-  endif 
+  endif
 
   assign show_filter = true
   if search.filters.size < 1
@@ -24,38 +24,117 @@
       --height-sticky-filter: 50px;
     }
   {% endif %}
-{%- endstyle -%} 
-<div {% if search.filters != empty %}{%- if section.settings.enable_filtering or section.settings.enable_sorting -%}x-data="xFiltersAndSortby('{{ section.id }}')"{% endif %}{% endif %} class="search-page pb-[{{ section.settings.padding_bottom_mobile }}px] pt-[{{ section.settings.padding_top_mobile }}px] md:pb-[{{ section.settings.padding_bottom }}px] md:pt-[{{ section.settings.padding_top }}px]">
+{%- endstyle -%}
+<script>
+  const baseUrl = window.location.href;
+  if (localStorage.getItem('searchFilter')) {
+    const param = new URLSearchParams({
+      filter: localStorage.getItem('searchFilter'),
+    });
+    window.location.href = `${baseUrl}&${param.toString()}`;
+    localStorage.removeItem('searchFilter');
+  }
+</script>
+<div
+  {% if search.filters != empty %}
+    {%- if section.settings.enable_filtering or section.settings.enable_sorting -%}
+      x-data="xFiltersAndSortby('{{ section.id }}')"
+    {%- endif -%}
+  {% endif %}
+  class="search-page pb-[{{ section.settings.padding_bottom_mobile }}px] pt-[{{ section.settings.padding_top_mobile }}px] md:pb-[{{ section.settings.padding_bottom }}px] md:pt-[{{ section.settings.padding_top }}px]"
+>
   <div class="page-width">
-    <h1 class="text-center h2 font-semibold mb-4">{%- if search.performed -%}{{ 'templates.search.title' | t }}{%- else -%}{{ 'general.search.search' | t }}{%- endif -%}</h1>
-    <div x-data="xModalSearch('{{ settings.search_type }}','{{ settings.search_desktop_maximun_results }}',{{ settings.search_mobile_maximun_results }})" 
-      class="flex justify-center relative mb-14" tabindex="-1">
-          <form action="{{ routes.search_url }}" method="get" role="search" class="max-w-3xl w-full">
-            <div id="form-1" class="relative field">
-              <input 
-                class="bg-[rgb(var(--colors-text),0.1)] focus-visible:outline-none pt-4 pb-4 pl-7 pr-7 text-left text-sm w-full appearance-none relative outline-none placeholder:opacity-70 placeholder:text-[rgb(var(--colors-text))]{% if settings.edges_type == 'rounded_corners' %} rounded-md{% endif %}"
-                type="search"
-                name="q"
-                value="{{ search.terms | escape }}"
-                x-on:keyup="keyUp()"
-                placeholder="{{ 'general.search.search' | t }}"
-              >
-              <input type="hidden" name="type" value="article" />
-              <input type="hidden" name="options[prefix]" value="last">
-              <button class="absolute none_border bg-none w-5 h-5 right-7 top-1/2 -translate-y-1/2 opacity-60 bg-transparent dark:bg-transparent text-current" aria-label="{{ 'general.search.search' | t }}">
-                {%- render 'icon-alls', icon: 'icon-search' -%}
-              </button>
-            </div>
-            {%- if settings.predictive_search_enabled -%}
-              <div x-show="openResults" @click.away="openResults = false" class="md:max-h-96 md:absolute z-40 max-w-3xl top-full w-full" tabindex="-1" data-predictive-search x-html="result">
-              </div>
-            {%- endif -%}
-          </form>
+    <h1 class="text-center h2 font-semibold mb-4">
+      {%- if search.performed -%}
+        {{ 'templates.search.title' | t }}
+      {%- else -%}
+        {{ 'general.search.search' | t }}
+      {%- endif -%}
+    </h1>
+    <div
+      x-data="xModalSearch('{{ settings.search_type }}','{{ settings.search_desktop_maximun_results }}',{{ settings.search_mobile_maximun_results }})"
+      class="flex justify-center relative mb-3"
+      tabindex="-1"
+    >
+      <form action="{{ routes.search_url }}" method="get" role="search" class="max-w-3xl w-full">
+        <div id="form-1" class="relative field">
+          <input
+            id="search-in-modal"
+            class="bg-[rgb(var(--colors-text),0.1)] focus-visible:outline-none pt-4 pb-4 pl-7 pr-7 text-left text-sm w-full appearance-none relative outline-none placeholder:opacity-70 placeholder:text-[rgb(var(--colors-text))]{% if settings.edges_type == 'rounded_corners' %} rounded-md{% endif %}"
+            type="search"
+            name="q"
+            value="{{ search.terms | escape }}"
+            x-on:keyup="keyUp()"
+            @focus="focusForm()"
+            @blur="blurForm(event)"
+            placeholder="{{ 'general.search.search' | t }}"
+          >
+          <input type="hidden" name="type" value="article">
+          <input type="hidden" name="options[prefix]" value="last">
+          <button
+            onclick="
+            {% if search.results.first.object_type == 'article' %}
+              let searchFilter = '';
+              document.querySelectorAll(`input[name='searchFilter']`).forEach(element => {
+                if(element.checked) {
+                  searchFilter = element.value
+                }
+              });
+              localStorage.setItem('searchFilter', searchFilter)
+            {% endif %}
+            "
+            class="absolute none_border bg-none w-5 h-5 right-7 top-1/2 -translate-y-1/2 opacity-60 bg-transparent dark:bg-transparent text-current"
+            aria-label="{{ 'general.search.search' | t }}"
+          >
+            {%- render 'icon-alls', icon: 'icon-search' -%}
+          </button>
+        </div>
+        {%- if settings.predictive_search_enabled -%}
+          <div
+            id="search-result"
+            x-show="openResults"
+            class="md:max-h-96 md:absolute z-40 max-w-3xl top-full w-full"
+            tabindex="-1"
+            data-predictive-search
+            x-html="result"
+          ></div>
+        {%- endif -%}
+      </form>
+    </div>
+    <div
+      x-data="{ searchFilter: new URLSearchParams(window.location.search).get('filter') }"
+      class="eurus flex justify-center gap-12 py-3 mb-3"
+    >
+      <div x-on:click="searchFilter = 'user-guide-page'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
+        <input
+          type="radio"
+          value="user-guide-page"
+          style="background-color: white !important"
+          class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
+          x-model="searchFilter"
+        >
+        <label for="" class="flex-1 cursor-pointer bg-transparent"> Eurus </label>
+        <br>
       </div>
+
+      <div x-on:click="searchFilter = 'user-guide-ironworks'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
+        <input
+          type="radio"
+          value="user-guide-ironworks"
+          style="background-color: white !important"
+          class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
+          x-model="searchFilter"
+        >
+        <label for="" class="flex-1 cursor-pointer bg-transparent"> Ironworks </label>
+        <br>
+      </div>
+    </div>
     {%- if search.performed -%}
       {%- unless section.settings.enable_filtering or section.settings.enable_sorting -%}
         {%- if search.results_count > 0 -%}
-          <p class="text-center mb-8" role="status">{{ 'templates.search.results_with_count_and_term' | t: terms: search.terms, count: search.results_count }}</p>
+          <p class="text-center mb-8" role="status">
+            {{ 'templates.search.results_with_count_and_term' | t: terms: search.terms, count: search.results_count }}
+          </p>
         {%- endif -%}
       {%- endunless -%}
       {%- if search.results_count == 0 and search.filters == empty -%}
@@ -64,15 +143,23 @@
     {%- endif -%}
   </div>
   {%- if search.performed -%}
-    <div class="page-width mx-auto{% if section.settings.sticky_filtering %} sticky top-[var(--height-header)] duration-300 z-20 bg-[rgba(var(--colors-background),1)]{% endif %}" id="header-filter"></div>
-    <div {% if section.settings.enable_filtering or section.settings.enable_sorting %}:class="!showFilterAside && 'filter-aside'"{% endif %} class="page-width mx-auto{% if section.settings.filter_type == 'aside' and section.settings.enable_filtering and show_filter %} grid md:grid-cols-3 lg:grid-cols-4 md:gap-7 md:pt-10{% endif %}">
+    <div
+      class="page-width mx-auto{% if section.settings.sticky_filtering %} sticky top-[var(--height-header)] duration-300 z-20 bg-[rgba(var(--colors-background),1)]{% endif %}"
+      id="header-filter"
+    ></div>
+    <div
+      {% if section.settings.enable_filtering or section.settings.enable_sorting %}
+        :class="!showFilterAside && 'filter-aside'"
+      {% endif %}
+      class="page-width mx-auto{% if section.settings.filter_type == 'aside' and section.settings.enable_filtering and show_filter %} grid md:grid-cols-3 lg:grid-cols-4 md:gap-7 md:pt-10{% endif %}"
+    >
       {%- if search.filters != empty -%}
         {%- if section.settings.enable_filtering or section.settings.enable_sorting -%}
           <div class="col-span-1 filter-aside:md:hidden{% if section.settings.sticky_filtering and section.settings.filter_type == 'above' %} md:sticky duration-300 top-[calc(var(--height-header)+var(--height-sticky-filter))] z-[19] bg-[rgba(var(--colors-background),1)]{% endif %}{% if section.settings.filter_type == 'above' and show_filter %} md:pt-2{% endif %}">
             {% render 'facets',
-              results: search, 
-              enable_filtering: section.settings.enable_filtering, 
-              enable_sorting: section.settings.enable_sorting, 
+              results: search,
+              enable_filtering: section.settings.enable_filtering,
+              enable_sorting: section.settings.enable_sorting,
               filter_type: section.settings.filter_type,
               search_page: true,
               sticky_filter: section.settings.sticky_filtering,
@@ -81,33 +168,51 @@
           </div>
         {%- endif -%}
       {%- endif -%}
-      <div class="{% if section.settings.filter_type == 'above' %}mt-6 md:mt-7{% endif %}{% if section.settings.filter_type == 'aside' %} md:col-span-2 lg:col-span-3 filter-aside:md:col-span-3 filter-aside:lg:col-span-4{% endif %}" id="ProductGridContainer">
+      <div
+        class="{% if section.settings.filter_type == 'above' %}mt-6 md:mt-7{% endif %}{% if section.settings.filter_type == 'aside' %} md:col-span-2 lg:col-span-3 filter-aside:md:col-span-3 filter-aside:lg:col-span-4{% endif %}"
+        id="ProductGridContainer"
+      >
         <h2 class="h-0 w-0 absolute opacity-0">{{ 'templates.search.title' | t }}</h2>
         {%- if search.results.size == 0 and search.filters != empty -%}
           <div class="w-full">
             <p class="text-center">
-              {{ 'sections.collection_template.empty' | t }}<br>
-              {{ 'sections.collection_template.use_fewer_filters_html' | t: link: search_url, class: "text-[rgb(var(--colors-text-link))]" }}
+              {{ 'sections.collection_template.empty' | t -}}
+              <br>
+              {{
+                'sections.collection_template.use_fewer_filters_html'
+                | t: link: search_url, class: 'text-[rgb(var(--colors-text-link))]'
+              }}
             </p>
           </div>
         {%- else -%}
-          {% paginate search.results by 24 %}
-            <div class="relative" {% if search.filters != empty %}{%- if section.settings.enable_filtering or section.settings.enable_sorting -%} :class="listLayout && 'list-layout'"{% endif %}{% endif %}>
+          {% paginate search.results by 50 %}
+            <div
+              class="relative"
+              {% if search.filters != empty %}
+                {%- if section.settings.enable_filtering or section.settings.enable_sorting -%}
+                  :class="listLayout && 'list-layout'"
+                {%- endif -%}
+              {% endif %}
+            >
               <div class="loading-cover left-0 absolute -top-8" x-show="loading" x-cloak>
                 <span class="loading-bar"></span>
               </div>
-              <div class="grid gap-4 md:gap-7 grid-cols-{{ section.settings.columns_mobile_grid }} md:grid-cols-2 lg:grid-cols-{{ section.settings.columns_desktop_grid }} list-layout:grid-cols-1" role="list">
+              <div
+                class="grid gap-4 md:gap-7 grid-cols-{{ section.settings.columns_mobile_grid }} md:grid-cols-2 lg:grid-cols-{{ section.settings.columns_desktop_grid }} list-layout:grid-cols-1"
+                role="list"
+              >
                 {%- for item in search.results -%}
                   {%- if forloop.index < 3 -%}
                     {%- assign loading = 'eager' -%}
                   {%- else -%}
                     {%- assign loading = 'lazy' -%}
                   {%- endif -%}
-                  <div class="grid__item">
+                  <div class="grid__item__{% if item.object_type == 'article' %}{{ forloop.index }}{% endif %}">
                     {%- case item.object_type -%}
                       {%- when 'product' -%}
                         {%- capture product_settings -%}{%- if section.settings.product_show_vendor -%}vendor,{%- endif -%}title,price{%- endcapture -%}
-                        {% render 'card-product',
+                        {%
+                          render 'card-product',
                           card_product: item,
                           show_vendor: section.settings.show_vendor,
                           show_rating: section.settings.show_rating,
@@ -116,22 +221,35 @@
                           column_mobile: section.settings.columns_mobile_grid | plus: 0,
                           block_id: forloop.index,
                           disable_quickview: disable_quickview,
-                          list_layout: true  
+                          list_layout: true
                         %}
                         <script src="{{ 'preview-color-swatches.js' | asset_url }}" defer></script>
                       {%- when 'article' -%}
+                        <script>
+                          {%- if item.template_suffix == 'user-guide-page' -%}
+                            if(new URLSearchParams(window.location.search).get('filter') !== 'user-guide-page') {
+                              document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none'
+                            }
+                          {%- endif -%}
+                          {%- if item.template_suffix == 'user-guide-ironworks' -%}
+                            if(new URLSearchParams(window.location.search).get('filter') !== 'user-guide-ironworks') {
+                              document.querySelector('.grid__item__{{ forloop.index }}').style.display = 'none'
+                            }
+                          {%- endif -%}
+                        </script>
                         <div class="h-full w-full">
-                          {% render 'article-card',
+                          {%
+                            render 'article-card',
                             article: item,
                             disable_divider: true,
                             image_desktop_top: true,
                             has_image: true,
                             show_badge: true,
                             loading: loading,
-                            image_ratio: section.settings.image_ratio, 
-                            show_name: section.settings.show_name, 
-                            show_author: section.settings.show_author, 
-                            show_date: section.settings.show_date, 
+                            image_ratio: section.settings.image_ratio,
+                            show_name: section.settings.show_name,
+                            show_author: section.settings.show_author,
+                            show_date: section.settings.show_date,
                             columns_desktop: section.settings.columns_desktop_grid,
                             columns_mobile: section.settings.columns_mobile_grid | plus: 0,
                             list_layout: true
@@ -140,7 +258,9 @@
                       {%- when 'page' -%}
                         <div class="h-full w-full">
                           <div class="pt-10 pb-7 pl-7 pr-7 w-full h-full bg-[rgb(var(--colors-text),0.05)] relative{% if settings.edges_type == 'rounded_corners' %} rounded-[10px]{% endif %}">
-                            <span class="absolute top-2 left-2 z-20 pl-2 text-xs pr-2 pt-1 pb-1 uppercase bg-[rgba(var(--background-color),1)]{% if settings.edges_type == 'rounded_corners' %} rounded{% endif %}">{{ 'templates.search.page' | t }}</span>
+                            <span class="absolute top-2 left-2 z-20 pl-2 text-xs pr-2 pt-1 pb-1 uppercase bg-[rgba(var(--background-color),1)]{% if settings.edges_type == 'rounded_corners' %} rounded{% endif %}">
+                              {{- 'templates.search.page' | t -}}
+                            </span>
                             <p class="p-break-words line-clamp-3 mb-2 text-[rgba(var(--colors-heading))]">
                               <a href="{{ item.url }}" class="disable-effect hover:text-[rgb(var(--colors-text-link))]">
                                 {{ item.title | truncate: 50 | escape }}
@@ -154,9 +274,13 @@
                   </div>
                 {%- endfor -%}
               </div>
-              {%- if paginate.pages > 1 -%}
+              {%- if paginate.pages > 1 and search.results.first.object_type != 'article' -%}
                 <div class="flex justify-center mt-3 md:mt-9 mb-7 border-t pt-7">
-                  {% render 'pagination', paginate: paginate, anchor: '', paginate_type: section.settings.paginate_type %}
+                  {% render 'pagination',
+                    paginate: paginate,
+                    anchor: '',
+                    paginate_type: section.settings.paginate_type
+                  %}
                 </div>
               {%- endif -%}
             </div>
