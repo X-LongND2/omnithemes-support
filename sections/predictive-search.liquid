@@ -14,7 +14,7 @@
   -%}
 <div class="background-header search-page:bg-[rgba(var(--background-color))] shadow-[0_0_6px_-4px_rgba(var(--colors-text))] pt-6{% unless settings.search_show_view_more and results_size > 0 %} pb-7{% endunless %}">
   <div id="predictive-search-results" class="overflow-auto max-h-[60vh] search-page:max-h-[45vh] scrollbar-body"> 
-    <div{% if results_size > 0 %} class="content-results-{{ settings.search_style }}"{% endif %}>
+    <div id='content-results' {% if results_size > 0 %} class="content-results-{{ settings.search_style }}"{% endif %}>
       {%- if predictive_search.resources.queries.size > 0 or predictive_search.resources.pages.size > 0 -%}
         <div class="predictive-search-results-list search-result-query-and-page grow{% if settings.search_style == 'vertical' %} lg:flex{% endif %}">
           {%- if predictive_search.resources.queries.size > 0 -%}
@@ -175,11 +175,14 @@
         </div>
       {%- endif -%}
     </div>
-    
+
+    <div id='search-no-results' class="hidden text-center pt-5 pb-5 pl-5 pr-5" data-predictive-search-live-region-count-value>
+      {{ 'templates.search.no_results' | t: terms: predictive_search.terms }}  
+    </div>
   </div>
   {% if settings.search_show_view_more and results_size > 0 %}
-    <button class="background-header shadow-[0_0_6px_-4px_rgba(var(--colors-text))] pt-5 pb-5 pl-6 pr-6 lg:pl-9 lg:pr-9 border-solid rounded-none inline-block cursor-pointer hover-text-link text-center w-full text-current border-t">
-      {{ 'templates.search.view_all' | t }} 
+    <button id='search-view-all' class="background-header shadow-[0_0_6px_-4px_rgba(var(--colors-text))] pt-5 pb-5 pl-6 pr-6 lg:pl-9 lg:pr-9 border-solid rounded-none inline-block cursor-pointer hover-text-link text-center w-full text-current border-t">
+      {{ 'templates.search.view_all' | t }} hihi
     </button>
   {%- endif -%}
 </div>

@@ -437,10 +437,24 @@ requestAnimationFrame(() => {
             const parser = new DOMParser();
             const text = parser.parseFromString(response, 'text/html');
             const articleItems = text.getElementsByClassName('article-item')
+            let findResult = false
             for(let i=0; i<articleItems.length; i++) {
               if(!articleItems[i].className.includes(searchFilter)) {
                 articleItems[i].style.display = 'none'
               }
+              else {
+                findResult = true
+              }
+            }
+            if(!findResult) {
+              text.getElementById('content-results').style.display = 'none'
+              if(text.getElementById('search-view-all')) text.getElementById('search-view-all').style.display = 'none'
+              text.getElementById('search-no-results').style.display = 'block'
+            }
+            else {
+              text.getElementById('content-results').removeAttribute('style')
+              if(text.getElementById('search-view-all')) text.getElementById('search-view-all').removeAttribute('style')
+              text.getElementById('search-no-results').removeAttribute('style')
             }
             this.result = text.querySelector("#shopify-section-predictive-search").innerHTML;
             if(!this.cachedResults[queryKey]) {
@@ -462,10 +476,29 @@ requestAnimationFrame(() => {
         }
       },
       focusForm() {
-        if (this.$el.value != '') {
+        this.query = this.$el.value;
+        if (this.query != "") {
           this.showSuggest = false;
+          this.getSearchResult(this.query);
+          document.getElementById('search-result').removeAttribute('style')
         } else {
           this.showSuggest = true;
+          this.result = "";
+        }
+      },
+      blurForm(event) {
+        if(event.relatedTarget.id !== 'search-result' && event.relatedTarget.id !== 'search-view-all') {
+          this.result = "";
+          document.getElementById('search-result').style.display = 'none'
+        }
+        else {
+          document.addEventListener('click', (event) => {
+            if(!document.getElementById('search-result').querySelector('.background-header').contains(event.target) &&
+            !document.getElementById('search-in-modal').contains(event.target)) {
+              this.result = "";
+              document.getElementById('search-result').style.display = 'none'
+            }
+          })
         }
       }
     }));
