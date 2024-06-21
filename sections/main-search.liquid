@@ -103,31 +103,34 @@
     </div>
     <div
       x-data="{ searchFilter: new URLSearchParams(window.location.search).get('filter') }"
-      class="eurus flex justify-center gap-12 py-3 mb-3"
+      class="flex flex-col items-center gap-4 pt-4 pb-12"
     >
-      <div x-on:click="searchFilter = 'user-guide-page'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
-        <input
-          type="radio"
-          value="user-guide-page"
-          style="background-color: white !important"
-          class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
-          x-model="searchFilter"
-        >
-        <label for="" class="flex-1 cursor-pointer bg-transparent"> Eurus </label>
-        <br>
-      </div>
-
-      <div x-on:click="searchFilter = 'user-guide-ironworks'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
-        <input
-          type="radio"
-          value="user-guide-ironworks"
-          style="background-color: white !important"
-          class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
-          x-model="searchFilter"
-        >
-        <label for="" class="flex-1 cursor-pointer bg-transparent"> Ironworks </label>
-        <br>
-      </div>
+      <p>Search limit to:</p>
+      <div class="eurus flex justify-center gap-12">
+        <div x-on:click="searchFilter = 'user-guide-page'" class="flex items-center cursor-pointer">
+          <input
+            type="radio"
+            value="user-guide-page"
+            style="background-color: white !important"
+            class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
+            x-model="searchFilter"
+          >
+          <label for="" class="flex-1 cursor-pointer bg-transparent"> Eurus </label>
+          <br>
+        </div>
+  
+        <div x-on:click="searchFilter = 'user-guide-ironworks'" class="flex items-center cursor-pointer">
+          <input
+            type="radio"
+            value="user-guide-ironworks"
+            style="background-color: white !important"
+            class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
+            x-model="searchFilter"
+          >
+          <label for="" class="flex-1 cursor-pointer bg-transparent"> Ironworks </label>
+          <br>
+        </div>
+      </div>     
     </div>
     {%- if search.performed -%}
       {%- unless section.settings.enable_filtering or section.settings.enable_sorting -%}

@@ -266,32 +266,35 @@
             {%- endif -%}
           </form>
 
-          <div x-data="{ searchFilter: 'user-guide-page' }" class="eurus flex justify-center gap-12 py-3">
-            <div x-on:click="searchFilter = 'user-guide-page'" class="flex items-center mt-1.5 mb-1.5 cursor-pointer">
-              <input
-                type="radio"
-                value="user-guide-page"
-                style="background-color: white !important"
-                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
-                x-model="searchFilter"
-              >
-              <label for="" class="flex-1 cursor-pointer bg-transparent"> Eurus </label>
-              <br>
-            </div>
+          <div x-data="{ searchFilter: 'user-guide-page' }" class="flex flex-col items-center gap-4 py-4">
+            <p>Search limit to:</p>
+            <div class='eurus flex justify-center gap-12'>
+              <div x-on:click="searchFilter = 'user-guide-page'" class="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  value="user-guide-page"
+                  style="background-color: white !important"
+                  class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
+                  x-model="searchFilter"
+                >
+                <label for="" class="flex-1 cursor-pointer bg-transparent"> Eurus </label>
+                <br>
+              </div>
 
-            <div
-              x-on:click="searchFilter = 'user-guide-ironworks'"
-              class="flex items-center mt-1.5 mb-1.5 cursor-pointer"
-            >
-              <input
-                type="radio"
-                value="user-guide-ironworks"
-                style="background-color: white !important"
-                class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
-                x-model="searchFilter"
+              <div
+                x-on:click="searchFilter = 'user-guide-ironworks'"
+                class="flex items-center cursor-pointer"
               >
-              <label for="" class="flex-1 cursor-pointer bg-transparent"> Ironworks </label>
-              <br>
+                <input
+                  type="radio"
+                  value="user-guide-ironworks"
+                  style="background-color: white !important"
+                  class="radio-checked relative h-4 w-4 mr-2 border focus:outline-none rounded-full cursor-pointer"
+                  x-model="searchFilter"
+                >
+                <label for="" class="flex-1 cursor-pointer bg-transparent"> Ironworks </label>
+                <br>
+              </div>
             </div>
           </div>
   {%- endif -%}
