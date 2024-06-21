@@ -585,6 +585,21 @@
     <script src="{{ 'article.js' | asset_url }}" defer></script>
   {%- endif -%}
 </article>
+<script defer>
+  setTimeout(() => {
+    if(document.body.clientWidth >= 1024) {
+      const mainContent = document.querySelector('.theme-template-article')
+      if(mainContent) {
+        const allSections = mainContent.querySelectorAll('.shopify-section');
+        const articleContent = allSections[0].getElementsByTagName('article')[0].querySelector('.order-2');
+        for(let i=1; i<allSections.length; i++) {
+          articleContent.appendChild(allSections[i])
+        }
+      } 
+    }
+  }, 100)
+</script>
+
 <script type="application/ld+json">
   {
     "@context": "http://schema.org",

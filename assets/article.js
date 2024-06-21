@@ -33,8 +33,8 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
               document.querySelector('.list-menu-article').innerHTML += htmlContent;
               if (index === heading2.length - 1) {
                 setTimeout(() => {
-                  const outlineHeight = window.getComputedStyle(el).height   
-                  if(document.body.clientWidth < 1024) {
+                  const outlineHeight = window.getComputedStyle(el).height
+                  if (document.body.clientWidth < 1024) {
                     const pageBody = document.querySelector('.page__body')
                     pageBody.style.marginTop = `calc(${Number(outlineHeight.slice(0, outlineHeight.length - 2))}px)`
                   }
@@ -46,22 +46,29 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
             el.style.marginTop = document.querySelector(".page__body").offsetTop + 30 + "px";
           }
           else {
-            el.style.display = 'block'
-            const getElementDocumentOffset = (element) => {
-              const rect = element.getBoundingClientRect()
-              const scrollTop = window.scrollY
-              return rect.top + scrollTop
+            const cssOutline = () => {
+              el.style.display = 'block'
+              const getElementDocumentOffset = (element) => {
+                const rect = element.getBoundingClientRect()
+                const scrollTop = window.scrollY
+                return rect.top + scrollTop
+              }
+              const pageTitle = document.querySelector('.page__title')
+
+              const pageContainer = document.querySelector('.page__container')
+              const pageTitleHeight = window.getComputedStyle(pageTitle).height
+              const outlinePos = getElementDocumentOffset(pageTitle) - getElementDocumentOffset(pageContainer) + Number(pageTitleHeight.slice(0, pageTitleHeight.length - 2))
+              el.style.top = `calc(${outlinePos}px + 1rem)`
+              if (window.innerWidth >= 768) {
+                el.style.marginLeft = '20px'
+              }
+              el.style.padding = '0px 20px'
             }
-            const pageTitle = document.querySelector('.page__title')
-            
-            const pageContainer = document.querySelector('.page__container')
-            const pageTitleHeight = window.getComputedStyle(pageTitle).height
-            const outlinePos = getElementDocumentOffset(pageTitle) - getElementDocumentOffset(pageContainer) + Number(pageTitleHeight.slice(0, pageTitleHeight.length - 2))
-            el.style.top = `calc(${outlinePos}px + 1rem)`
-            if (window.innerWidth >= 768) {
-              el.style.marginLeft = '20px'
-            }
-            el.style.padding = '0px 20px'      
+            const resizeObserver = new ResizeObserver((entries) => {
+              cssOutline()
+            })
+            resizeObserver.observe(document.querySelector('.theme-template-article'));
+            cssOutline()
           }
         },
         scrollTop(el, index) {
