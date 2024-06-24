@@ -487,7 +487,7 @@ requestAnimationFrame(() => {
         }
       },
       blurForm(event) {
-        if(event.relatedTarget && event.relatedTarget.id !== 'search-result' && event.relatedTarget.id !== 'search-view-all') {
+        if(event.relatedTarget && !document.getElementById('search-result').contains(event.relatedTarget) && !document.getElementById('search-view-all').contains(event.relatedTarget)) {
           this.result = "";
           document.getElementById('search-result').style.display = 'none'
         }
