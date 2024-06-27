@@ -24,12 +24,21 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
           } else {
             document.querySelector('.menu-article').remove()
           }
+          if(window.location.href.split('#index=')[1]) {
+            this.scrollTop(null,window.location.href.split('#index=')[1].slice(0,1))
+          }
         },
         loadData(el) {
           const heading2 = document.querySelectorAll('article h2, article h3');
+          let url = window.location.href
           if (heading2.length > 1) {
             heading2.forEach((item, index) => {
-              let htmlContent = "<li class='item-menu-article w-full cursor-pointer pb-2 " + (item.tagName == 'H3' ? 'pl-3' : '') + "' @click='scrollTop($el," + index + ")' >" + item.textContent + "</li>";
+              if(url.split('#index=')[1]) {
+                url = url.split('#index=')[0] + '#index='+ index + url.split('#index=')[1].slice(1);
+              }else {
+                url = url + '#index='+ index;
+              }
+              let htmlContent = "<li class='item-menu-article w-full cursor-pointer pb-2 "+ (item.tagName == 'H3' ? 'pl-3' : '') +"' @click='scrollTop($el," + index + ")' ><a href='" + url +"'>" + item.textContent + "</a></li>";
               document.querySelector('.list-menu-article').innerHTML += htmlContent;
               if (index === heading2.length - 1) {
                 setTimeout(() => {
@@ -42,6 +51,10 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
               }
             })
           }
+          else {
+            document.querySelector('.menu-article').remove();
+          }
+
           if (document.body.clientWidth >= 1024) {
             el.style.marginTop = document.querySelector(".page__body").offsetTop + 30 + "px";
           }
@@ -76,7 +89,9 @@ if (!window.Eurus.loadedScript.includes('article.js')) {
             if (document.querySelector('.menu-article .active')) {
               document.querySelector('.menu-article .active').classList.remove("active");
             }
-            el.classList.add("active");
+            if(el) {
+              el.classList.add("active");
+            }
             document.querySelectorAll('article h2, article h3')[index].scrollIntoView({ behavior: "smooth" });
           }
         }
