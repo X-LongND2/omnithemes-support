@@ -37,7 +37,14 @@
     -%}
     {%- style -%}
       .heading--{{ section.id }} {
+        font-size: 0.7875rem;
+        text-align: center
+      }
+      @media only screen and (min-width: 768px) {
+        .heading--{{ section.id }} {
          font-size: {{ heading_size }}rem;
+         text-align: left
+        }
       }
     {%- endstyle -%}
     <div class="article--{{ section.id }}{% if section.settings.menu_heading == blank or section.settings.menu_left == blank %} page-width{% endif %} ml-auto mr-auto pr-0 pl-0 flex flex-wrap relative">
@@ -174,12 +181,12 @@
       {%- endif -%}
       {%- if section.settings.menu_heading != blank -%}
         <div
-          class="menu-article lg:w-1/5 md:mb-20{% if section.settings.menu_left != blank %} hidden md:block order-3{%- endif -%}"
+          class="menu-article lg:w-1/5 lg:mb-20{% if section.settings.menu_left != blank %} absolute lg:relative hidden lg:block order-3{%- endif -%}"
           x-data="xArticle"
           x-init="loadData($el)"
         >
-          <div class="md:sticky pl-5 pr-5 pt-3.5 pb-3.5 top-28 border">
-            <div class="heading--{{ section.id }} pb-5 h2">{{ section.settings.menu_heading }}</div>
+          <div class="md:sticky pl-3 pr-3 md:pl-5 md:pr-5 pt-3 pb-3 md:pt-3.5 md:pb-3.5 top-28 border">
+            <div class="heading--{{ section.id }} pb-3 md:pb-5 h2">{{ section.settings.menu_heading }}</div>
             <ul class="list-menu-article inline-flex flex-wrap items-center"></ul>
           </div>
         </div>
